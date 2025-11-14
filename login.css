@@ -23,7 +23,7 @@
       margin-bottom: 25px;
     }
 
-    /* --- CORRECTION FINALE --- */
+   
     .box input,
     .box button {
       width: 100%;
@@ -32,12 +32,12 @@
       margin: 10px 0;
       border-radius: 10px;
       border: 0;
-      box-sizing: border-box;   /* essentiel */
+      box-sizing: border-box;   
     }
 
     .box input {
       background:#0f1724;
-      color: white;
+      color: #0f1724;
     }
 
     .box button {
