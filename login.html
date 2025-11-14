@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Connexion — MiniRéseau</title>
+  <link rel="stylesheet" href="login.css">
+  <style>
+    body { display:flex; justify-content:center; align-items:center; height:100vh; background:#111; color:white; }
+    .box { background:#222; padding:30px; border-radius:12px; width:320px; }
+    .box h2 { text-align:center; margin-bottom:20px; }
+    input { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:0; background:#333; color:white; }
+    button { width:100%; padding:10px; margin-top:10px; border:0; background:#00aaff; color:white; border-radius:8px; cursor:pointer; }
+    .toggle { margin-top:10px; text-align:center; cursor:pointer; color:#0af; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2 id="formTitle">Connexion</h2>
+
+  <!-- Connexion -->
+  <div id="loginForm">
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Mot de passe">
+    <button onclick="login()">Se connecter</button>
+
+    <div class="toggle" onclick="switchForm('forgot')">Mot de passe oublié ?</div>
+    <div class="toggle" onclick="switchForm('register')">Créer un compte</div>
+  </div>
+
+  <!-- Inscription -->
+  <div id="registerForm" style="display:none">
+    <input id="regName" placeholder="Nom">
+    <input id="regPrenom" placeholder="Prenom">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Mot de passe">
+    <button onclick="register()">S’inscrire</button>
+    <div class="toggle" onclick="switchForm('login')">Déjà un compte ? Connexion</div>
+  </div>
+
+  <!-- Mot de passe oublié -->
+  <div id="forgotForm" style="display:none">
+    <input id="forgotEmail" placeholder="Votre email">
+    <button onclick="searchUserForReset()">Continuer</button>
+    <div class="toggle" onclick="switchForm('login')">Retour</div>
+  </div>
+
+  <!-- Nouveau mot de passe -->
+  <div id="resetForm" style="display:none">
+    <input id="newPassword" type="password" placeholder="Nouveau mot de passe">
+    <button onclick="resetPassword()">Réinitialiser</button>
+    <div class="toggle" onclick="switchForm('login')">Retour</div>
+  </div>
+
+</div>
+
+<script src="auth.js"></script>
+</body>
+</html>
