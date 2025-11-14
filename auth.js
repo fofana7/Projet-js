@@ -1,166 +1,98 @@
 // ======= CONST =======
-const USERS_KEY = "minireseau:users";
-const SESSION_KEY = "minireseau:session";
+const API_URL = "http://localhost:3000/api";
 
-// ======= UTILITAIRES =======
-function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-}
-
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function setSession(email) {
-  localStorage.setItem(SESSION_KEY, email);
+// ======= SESSION =======
+function setSession(users) {
+    localStorage.setItem("minireseau:session", JSON.stringify(users));
 }
 
 function getSession() {
-  return localStorage.getItem(SESSION_KEY);
+    const s = localStorage.getItem("minireseau:session");
+    return s ? JSON.parse(s) : null;
 }
 
 function logout() {
-  localStorage.removeItem(SESSION_KEY);
-  location.href = "login.html";
+    localStorage.removeItem("minireseau:session");
+    window.location.href = "login.html";
 }
 
 // ======= SWITCH FORM =======
-let resetEmail = null;
+function switchForm(type) {
+    const forms = ["loginForm", "registerForm"];
+    forms.forEach(f => document.getElementById(f).style.display = "none");
 
-function switchForm(type){
-  const forms = ["loginForm", "registerForm", "forgotForm", "resetForm"];
-  forms.forEach(f => document.getElementById(f).style.display = "none");
-
-  if(type === "login"){
-    document.getElementById("formTitle").textContent = "Connexion";
-    document.getElementById("loginForm").style.display = "block";
-  } else if(type === "register"){
-    document.getElementById("formTitle").textContent = "Inscription";
-    document.getElementById("registerForm").style.display = "block";
-  } else if(type === "forgot"){
-    document.getElementById("formTitle").textContent = "Mot de passe oublié";
-    document.getElementById("forgotForm").style.display = "block";
-  } else if(type === "reset"){
-    document.getElementById("formTitle").textContent = "Nouveau mot de passe";
-    document.getElementById("resetForm").style.display = "block";
-  }
-}
-
-// ======= MOT DE PASSE ANSI/NIST =======
-function isValidPassword(pass) {
-  const minLength = 8;
-  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/;
-
-  if(pass.length < minLength) {
-    alert("Le mot de passe doit contenir au moins 8 caractères.");
-    return false;
-  }
-  if(!regex.test(pass)) {
-    alert("Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.");
-    return false;
-  }
-  return true;
+    if (type === "login") document.getElementById("loginForm").style.display = "block";
+    else if (type === "register") document.getElementById("registerForm").style.display = "block";
 }
 
 // ======= INSCRIPTION =======
-function register() {
-  const name = document.getElementById("regName").value.trim();
-  const prenom = document.getElementById("regPrenom").value.trim();
-  const email = document.getElementById("regEmail").value.trim().toLowerCase();
-  const pass = document.getElementById("regPassword").value.trim();
+async function register() {
+    // On concatène Nom + Prénom pour username
+    const username = document.getElementById("regName").value.trim() + " " + document.getElementById("regPrenom").value.trim();
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
+    const password = document.getElementById("regPassword").value.trim();
 
-  if (!name || !prenom || !email || !pass) 
-      return alert("Remplissez tous les champs.");
+    if (!username || !email || !password) {
+        return alert("Remplissez tous les champs");
+    }
 
-  // Vérifier email @esme.fr
-  if (!email.endsWith("@esme.fr")) {
-      return alert("Vous devez utiliser un email se terminant par @esme.fr");
-  }
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password })
+        });
 
-  if (!isValidPassword(pass)) return;
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur inscription");
 
-  let users = getUsers();
-  if (users.find(u => u.email === email)) 
-      return alert("Cet email existe déjà.");
-
-  users.push({
-      name: name + " " + prenom,
-      email,
-      password: pass,
-      avatar: null,
-      bio: ""
-  });
-
-  saveUsers(users);
-
-  alert("Compte créé !");
-  switchForm("login");
+        alert("Inscription réussie !");
+        switchForm("login");
+    } catch (err) {
+        alert(err.message);
+        console.error(err);
+    }
 }
 
 // ======= CONNEXION =======
-function login() {
-  const email = document.getElementById("loginEmail").value.trim().toLowerCase();
-  const pass = document.getElementById("loginPassword").value.trim();
+async function login() {
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value.trim();
 
-  const users = getUsers();
-  const user = users.find(u => u.email === email && u.password === pass);
-  if(!user) return alert("Email ou mot de passe incorrect.");
+    if (!email || !password) return alert("Remplissez tous les champs");
 
-  setSession(email);
-  location.href = "index.html";
-}
+    try {
+        const res = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
 
-// ======= MOT DE PASSE OUBLIÉ =======
-function searchUserForReset(){
-  const email = document.getElementById("forgotEmail").value.trim().toLowerCase();
-  const users = getUsers();
-  const user = users.find(u => u.email === email);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur connexion");
 
-  if(!user){
-    alert("Aucun compte trouvé avec cet email.");
-    return;
-  }
-
-  resetEmail = email;
-  switchForm("reset");
-}
-
-function resetPassword(){
-  const pass = document.getElementById("newPassword").value.trim();
-  if(!pass) return alert("Entrez un mot de passe.");
-
-  if (!isValidPassword(pass)) return;
-
-  const users = getUsers();
-  const user = users.find(u => u.email === resetEmail);
-  user.password = pass;
-
-  saveUsers(users);
-  alert("Mot de passe réinitialisé !");
-  switchForm("login");
+        setSession(data.user);
+        window.location.href = "index.html"; // redirige vers la page principale
+    } catch (err) {
+        alert(err.message);
+        console.error(err);
+    }
 }
 
 // ======= PROTECTION PAGE =======
 function protectPage() {
-  if (!getSession()) {
-    location.href = "login.html";
-  }
+    if (!getSession()) window.location.href = "login.html";
 }
 
-// ======= SESSION ACTUELLE =======
+// ======= UTILITAIRES =======
 function getCurrentUser() {
-  const email = getSession();
-  if(!email) return null;
-  const users = getUsers();
-  return users.find(u => u.email === email);
+    return getSession();
 }
 
-// ======= EXPORT / GLOBAL =======
+// ======= EXPORT GLOBAL =======
 window.register = register;
 window.login = login;
 window.switchForm = switchForm;
-window.searchUserForReset = searchUserForReset;
-window.resetPassword = resetPassword;
 window.logout = logout;
 window.protectPage = protectPage;
 window.getCurrentUser = getCurrentUser;
