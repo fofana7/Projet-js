@@ -26,11 +26,20 @@ function switchForm(type) {
 }
 
 // ======= INSCRIPTION =======
+<<<<<<< HEAD
 async function register() {
     // On concatène Nom + Prénom pour username
     const username = document.getElementById("regName").value.trim() + " " + document.getElementById("regPrenom").value.trim();
     const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const password = document.getElementById("regPassword").value.trim();
+=======
+function register() {
+  const name = document.getElementById("regName").value.trim();
+  const prenom = document.getElementById("regPrenom").value.trim();
+  const pseudo = (name + " " + prenom).toLowerCase(); // pseudo insensible à la casse
+  const email = document.getElementById("regEmail").value.trim().toLowerCase();
+  const pass = document.getElementById("regPassword").value.trim();
+>>>>>>> 06caad837c818d43c17939b469ee6f010eca4a1e
 
     if (!username || !email || !password) {
         return alert("Remplissez tous les champs");
@@ -46,12 +55,37 @@ async function register() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erreur inscription");
 
+<<<<<<< HEAD
         alert("Inscription réussie !");
         switchForm("login");
     } catch (err) {
         alert(err.message);
         console.error(err);
     }
+=======
+  let users = getUsers();
+
+  // Vérifier si l'email existe déjà
+  if (users.find(u => u.email === email)) 
+      return alert("Cet email existe déjà.");
+
+  // Vérifier si le pseudo existe déjà (insensible à la casse)
+  if (users.find(u => u.name.toLowerCase() === pseudo)) 
+      return alert("Ce pseudo existe déjà.");
+
+  users.push({
+      name: name + " " + prenom,
+      email,
+      password: pass,
+      avatar: null,
+      bio: ""
+  });
+
+  saveUsers(users);
+
+  alert("Compte créé !");
+  switchForm("login");
+>>>>>>> 06caad837c818d43c17939b469ee6f010eca4a1e
 }
 
 // ======= CONNEXION =======
