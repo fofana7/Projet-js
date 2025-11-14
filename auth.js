@@ -66,6 +66,7 @@ function isValidPassword(pass) {
 function register() {
   const name = document.getElementById("regName").value.trim();
   const prenom = document.getElementById("regPrenom").value.trim();
+  const pseudo = (name + " " + prenom).toLowerCase(); // pseudo insensible à la casse
   const email = document.getElementById("regEmail").value.trim().toLowerCase();
   const pass = document.getElementById("regPassword").value.trim();
 
@@ -80,8 +81,14 @@ function register() {
   if (!isValidPassword(pass)) return;
 
   let users = getUsers();
+
+  // Vérifier si l'email existe déjà
   if (users.find(u => u.email === email)) 
       return alert("Cet email existe déjà.");
+
+  // Vérifier si le pseudo existe déjà (insensible à la casse)
+  if (users.find(u => u.name.toLowerCase() === pseudo)) 
+      return alert("Ce pseudo existe déjà.");
 
   users.push({
       name: name + " " + prenom,
