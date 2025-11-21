@@ -17,35 +17,18 @@
     <input id="loginPassword" type="password" placeholder="Mot de passe">
     <button onclick="login()">Se connecter</button>
 
-    <div class="toggle" onclick="switchForm('forgot')">Mot de passe oublié ?</div>
     <div class="toggle" onclick="switchForm('register')">Créer un compte</div>
   </div>
 
   <!-- Inscription -->
   <div id="registerForm" style="display:none">
     <input id="regName" placeholder="Nom">
-    <input id="regPrenom" placeholder="Prenom">
-    <input id="regPseudo" placeholder="Pseudo">
+    <input id="regPrenom" placeholder="Prénom">
     <input id="regEmail" placeholder="Email">
     <input id="regPassword" type="password" placeholder="Mot de passe">
     <button onclick="register()">S’inscrire</button>
     <div class="toggle" onclick="switchForm('login')">Déjà un compte ? Connexion</div>
   </div>
-
-  <!-- Mot de passe oublié -->
-  <div id="forgotForm" style="display:none">
-    <input id="forgotEmail" placeholder="Votre email">
-    <button onclick="searchUserForReset()">Continuer</button>
-    <div class="toggle" onclick="switchForm('login')">Retour</div>
-  </div>
-
-  <!-- Nouveau mot de passe -->
-  <div id="resetForm" style="display:none">
-    <input id="newPassword" type="password" placeholder="Nouveau mot de passe">
-    <button onclick="resetPassword()">Réinitialiser</button>
-    <div class="toggle" onclick="switchForm('login')">Retour</div>
-  </div>
-
 </div>
 
 <script src="auth.js"></script>
