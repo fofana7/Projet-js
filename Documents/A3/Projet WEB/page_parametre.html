@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paramètres - RevoSocial</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fafafa;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 90px;
+      background: #fff;
+      height: 100vh;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      position: fixed;
+    }
+
+    .sidebar-icon {
+      font-size: 28px;
+      margin: 25px 0;
+      cursor: pointer;
+    }
+
+    /* MAIN WRAPPER */
+    .main {
+      margin-left: 90px;
+      width: 100%;
+      display: flex;
+      padding: 30px;
+      gap: 40px;
+    }
+
+    /* LEFT MENU */
+    .menu {
+      width: 320px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      height: fit-content;
+    }
+
+    .menu h2 {
+      margin: 0 0 20px;
+    }
+
+    .menu-section {
+      margin-bottom: 25px;
+    }
+
+    .menu-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .menu-item {
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .menu-item:hover {
+      background: #f0f0f0;
+    }
+
+    /* RIGHT CONTENT */
+    .content {
+      flex: 1;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .content h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .profile-box {
+      background: #f2f2f2;
+      padding: 20px;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    .profile-pic-small {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .btn-edit-photo {
+      background: #4a55ff;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* FORM */
+    .field {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .field input, .field textarea, .field select {
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .save-btn {
+      padding: 14px 25px;
+      background: #4a55ff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-icon">🏠</div>
+  <div class="sidebar-icon">🔍</div>
+  <div class="sidebar-icon">❤️</div>
+  <div class="sidebar-icon">➕</div>
+  <div class="sidebar-icon">📸</div>
+  <div class="sidebar-icon">👤</div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT MENU -->
+  <div class="menu">
+    <h2>Paramètres</h2>
+
+    <div class="menu-section">
+      <div class="menu-title">Espace Comptes</div>
+      <div class="menu-item">Informations personnelles</div>
+      <div class="menu-item">Mot de passe et sécurité</div>
+      <div class="menu-item">Préférences publicitaires</div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-title">Comment vous utilisez RevoSocial</div>
+      <div class="menu-item">Modifier le profil</div>
+      <div class="menu-item">Notifications</div>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-title">Confidentialité</div>
+      <div class="menu-item">Qui peut voir votre contenu</div>
+      <div class="menu-item">Comptes bloqués</div>
+    </div>
+  </div>
+
+  <!-- RIGHT SECTION -->
+  <div class="content">
+    <h1>Modifier le profil</h1>
+
+    <div class="profile-box">
+      <div style="display:flex; align-items:center; gap:20px;">
+        <img class="profile-pic-small" src="https://i.pravatar.cc/200" />
+        <strong>Nom Utilisateur</strong>
+      </div>
+      <button class="btn-edit-photo">Modifier la photo</button>
+    </div>
+
+    <div class="field">
+      <label>Site Web</label>
+      <input type="text" placeholder="Votre site..." />
+    </div>
+
+    <div class="field">
+      <label>Bio</label>
+      <textarea rows="3" placeholder="Votre bio..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Genre</label>
+      <select>
+        <option>Homme</option>
+        <option>Femme</option>
+        <option>Autre</option>
+      </select>
+    </div>
+
+    <button class="save-btn">Enregistrer</button>
+
+    <div class="field">
+      <label>Date de naissance</label>
+      <input type="date" />
+    </div>
+
+    <!-- MENU DEROULANT POUR CLASSE -->
+    <div class="field">
+      <label>Classe</label>
+      <select>
+        <option>Sup</option>
+        <option>Sp2</option>
+        <option>Ingé1</option>
+        <option>Ingé2</option>
+        <option>Ingé3</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Localisation</label>
+      <input type="text" placeholder="Ville, pays" />
+    </div>
+
+    <div class="field">
+      <label>Thème</label>
+      <select>
+        <option>Mode clair</option>
+        <option>Mode sombre</option>
+        <option>Automatique</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Langue</label>
+      <select>
+        <option>Français</option>
+        <option>Anglais</option>
+        <option>Espagnol</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Notifications par email</label>
+      <select>
+        <option>Important uniquement</option>
+        <option>Toutes</option>
+        <option>Aucune</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Notifications push</label>
+      <select>
+        <option>Toutes</option>
+        <option>Seulement les messages</option>
+        <option>Désactivées</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Compte vérifié</label>
+      <select>
+        <option>Non vérifié</option>
+        <option>Demander la vérification</option>
+      </select>
+    </div>
+
+    <button class="save-btn">Enregistrer</button>
+
+  </div>
+
+</div>
+
+</body>
+</html>
