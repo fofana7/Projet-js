@@ -194,7 +194,15 @@
     load(); renderSuggestions(); renderFeed(); updateNotifUI();
 
     // Expose for buttons in HTML inline handlers
-    window.seedSample = seedSample; window.clearAll = clearAll; window.showTab = function(t){ alert('Onglet: '+t+' (prototype)') };
+    window.seedSample = seedSample; window.clearAll = clearAll;window.showTab = function(t){
+  if (t === 'messages') {
+    window.location.href = "messages.html";  
+    return;
+  }
+
+  alert("Onglet : " + t + " (en construction)");
+};
+
     window.toggleLike = toggleLike; window.openComments = openComments; window.addComment = addComment; window.sharePost = sharePost; window.deletePost = deletePost; window.follow = follow; window.getInitials = getInitials;
   </script>
 </body>

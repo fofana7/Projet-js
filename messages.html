@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MiniRéseau — Messages</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Styles locaux rapides pour la page messages (tu peux déplacer dans style.css) */
+    .messages-wrap { display:flex; gap:16px; padding:18px; }
+    .conversations { width:320px; max-height:80vh; overflow:auto; }
+    .conv { padding:10px; border-radius:10px; margin-bottom:8px; background:var(--card-bg, #111); cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .conv .meta { display:flex; gap:10px; align-items:center; }
+    .avatar { width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700 }
+    .conv .text { font-size:14px;color:var(--muted,#aaa) }
+    .chat { flex:1; display:flex; flex-direction:column; max-height:80vh; background:transparent; }
+    .chat-header { padding:12px 10px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex;justify-content:space-between;align-items:center }
+    .messages-list { padding:12px; overflow:auto; flex:1; }
+    .msg { margin-bottom:10px; max-width:70%; padding:10px;border-radius:10px }
+    .msg.me { margin-left:auto; background:rgba(0,120,255,0.15) }
+    .msg.other { background:rgba(255,255,255,0.03) }
+    .composer-row { display:flex; gap:8px; padding:10px; border-top:1px solid rgba(255,255,255,0.02) }
+    .composer-row input { flex:1; padding:10px;border-radius:8px;border:0;background:var(--glass) }
+    .small-muted { font-size:12px;color:var(--muted,#999) }
+    .empty { padding:30px;text-align:center;color:var(--muted,#999) }
+    .unread-badge { background:#ff4d4f;padding:4px 8px;border-radius:999px;color:white;font-size:12px }
+    .topbar { display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.03) }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn" id="backBtn">← Retour</button>
+      <strong>Messages</strong>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="newConvBtn">✚ Nouvelle conversation</button>
+      <button class="btn" id="clearMsgsBtn">Réinit messages</button>
+    </div>
+  </div>
+
+  <div class="messages-wrap">
+    <div class="card conversations" id="conversations"></div>
+
+    <div class="card chat" id="chatPanel">
+      <div class="chat-header" id="chatHeader">
+        <div><strong id="chatTitle">Sélectionner une conversation</strong><div class="small-muted" id="chatSub">...</div></div>
+        <div id="chatActions"></div>
+      </div>
+      <div class="messages-list" id="messagesList">
+        <div class="empty">Aucune conversation sélectionnée</div>
+      </div>
+      <div class="composer-row">
+        <input id="messageInput" placeholder="Écrire un message..." />
+        <button class="btn" id="sendBtn">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Reprend la même clé que ton app principale
+    const STORAGE_KEY = 'minireseau:v1';
+
+    // Récupère l'état existant (ou initialise)
+    function loadState(){
+      const s = localStorage.getItem(STORAGE_KEY);
+      let base = {me:{name:'Utilisateur Demo',handle:'@demo'}, posts:[], friends:[], notifications:[]};
+      if(s){
+        try{ base = JSON.parse(s); } catch(e){ console.warn('parse error',e) }
+      }
+      // assure la structure messages
+      base.messages = base.messages || [];
+      // assure participants: array and messages inside each conv
+      base.messages.forEach(c => { c.messages = c.messages || []; c.participants = c.participants || []; });
+      return base;
+    }
+    function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+
+    let state = loadState();
+    let currentConvId = null;
+
+    // DOM
+    const convsEl = document.getElementById('conversations');
+    const messagesListEl = document.getElementById('messagesList');
+    const chatTitleEl = document.getElementById('chatTitle');
+    const chatSubEl = document.getElementById('chatSub');
+    const messageInput = document.getElementById('messageInput');
+
+    // helpers
+    function uid(){ return Math.random().toString(36).slice(2,9); }
+    function formatTime(ts){ return new Date(ts).toLocaleString(); }
+    function initials(name){ return (name||'U').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(); }
+
+    // rendering
+    function renderConversations(){
+      convsEl.innerHTML = '';
+      const convs = state.messages.slice().sort((a,b)=> (b.lastTs||0) - (a.lastTs||0));
+      if(convs.length===0){ convsEl.innerHTML = '<div class="empty">Aucune conversation. Crée en une !</div>'; return; }
+      convs.forEach(c=>{
+        const last = c.messages && c.messages.length ? c.messages[c.messages.length-1] : null;
+        const unread = (c.messages||[]).filter(m=>!m.read && m.author!==state.me.name).length;
+        const name = c.title || (c.participants.filter(p=>p!==state.me.name).join(', ') || 'Conversation');
+        const el = document.createElement('div');
+        el.className = 'conv';
+        el.innerHTML = `<div class="meta"><div class="avatar">${initials(name)}</div><div><strong>${name}</strong><div class="text">${last ? (last.text.length>60? last.text.slice(0,60)+'…': last.text) : '<span class="small-muted">Aucun message</span>'}</div></div></div>
+                        <div style="text-align:right">${last?('<div class="small-muted">'+formatTime(last.ts)+'</div>') : ''}${unread?('<div style="margin-top:6px"><span class="unread-badge">'+unread+'</span></div>') : ''}</div>`;
+        el.addEventListener('click', ()=> openConversation(c.id));
+        convsEl.appendChild(el);
+      });
+    }
+
+    function renderMessages(conv){
+      messagesListEl.innerHTML = '';
+      if(!conv){ messagesListEl.innerHTML = '<div class="empty">Sélectionne une conversation à gauche.</div>'; return; }
+      if((conv.messages||[]).length===0){ messagesListEl.innerHTML = '<div class="empty">Aucun message — commence la conversation !</div>'; return; }
+      conv.messages.forEach(m=>{
+        const d = document.createElement('div');
+        d.className = 'msg '+(m.author===state.me.name ? 'me' : 'other');
+        d.innerHTML = `<div style="font-size:13px;margin-bottom:6px"><strong>${m.author}</strong> <span class="small-muted">· ${formatTime(m.ts)}</span></div><div>${escapeHtml(m.text)}</div>`;
+        messagesListEl.appendChild(d);
+      });
+      // scroll bottom
+      messagesListEl.scrollTop = messagesListEl.scrollHeight;
+    }
+
+    // open conv
+    function openConversation(id){
+      const conv = state.messages.find(c=>c.id===id); if(!conv) return;
+      currentConvId = id;
+      chatTitleEl.textContent = conv.title || conv.participants.filter(p=>p!==state.me.name).join(', ') || 'Conversation';
+      chatSubEl.textContent = 'Participants: ' + (conv.participants.join(', ') || '—');
+      // mark unread as read
+      (conv.messages||[]).forEach(m=> { if(m.author!==state.me.name) m.read = true; });
+      conv.lastTs = conv.messages.length ? conv.messages[conv.messages.length-1].ts : conv.lastTs;
+      saveState(state); renderConversations(); renderMessages(conv);
+    }
+
+    // send message
+    function sendMessage(){
+      const text = messageInput.value.trim(); if(!text || !currentConvId) return;
+      const conv = state.messages.find(c=>c.id===currentConvId); if(!conv) return;
+      const m = {id:uid(), author: state.me.name, text, ts: Date.now(), read:true};
+      conv.messages.push(m);
+      conv.lastTs = m.ts;
+      saveState(state); messageInput.value=''; renderConversations(); renderMessages(conv); notifyLocal('Message envoyé'); 
+    }
+
+    // new conversation
+    function newConversation(){
+      const other = prompt('Nom(s) du participant (séparé par une virgule) :');
+      if(!other) return;
+      const participants = other.split(',').map(s=>s.trim()).filter(Boolean);
+      if(participants.length===0) return;
+      const title = participants.join(', ');
+      const conv = { id: uid(), title, participants: [state.me.name, ...participants], messages: [], lastTs: Date.now() };
+      state.messages.push(conv); saveState(state); renderConversations(); openConversation(conv.id);
+    }
+
+    // quick seed example convs
+    function seedMessages(){
+      if(state.messages.length) return;
+      const sample = [
+        { title:'Alice', participants:['Alice',''+state.me.name], messages:[
+          {id:uid(),author:'Alice',text:'Salut ! Tu as vu le nouveau projet ?',ts:Date.now()-1000*60*60, read:false},
+          {id:uid(),author:state.me.name,text:'Oui, j\'y jette un oeil ce soir.',ts:Date.now()-1000*60*50, read:true}
+        ]},
+        { title:'Bob', participants:['Bob',''+state.me.name], messages:[
+          {id:uid(),author:'Bob',text:'On se voit demain ?',ts:Date.now()-1000*60*60*6, read:false}
+        ]}
+      ];
+      sample.forEach(c=>{ c.id = uid(); c.lastTs = c.messages[c.messages.length-1].ts; state.messages.push(c); });
+      saveState(state);
+    }
+
+    // utils
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function notifyLocal(msg){ state.notifications = state.notifications || []; state.notifications.push({id:uid(),text:msg, ts:Date.now()}); saveState(state); updateNotifCount(); }
+
+    function updateNotifCount(){
+      // laisse pour intégration future : exponer notifications au parent via StorageEvent
+      // on pourrait mettre badge, etc.
+    }
+
+    // buttons
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }});
+    document.getElementById('newConvBtn').addEventListener('click', newConversation);
+    document.getElementById('clearMsgsBtn').addEventListener('click', ()=>{
+      if(!confirm('Supprimer toutes les conversations (local) ?')) return;
+      state.messages = []; saveState(state); renderConversations(); renderMessages(null);
+    });
+    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.href = './index.html'; });
+
+    // on load
+    seedMessages();
+    renderConversations();
+    renderMessages(null);
+
+    // expose for console/testing
+    window.state = state;
+    window.openConversation = openConversation;
+  </script>
+</body>
+</html>
