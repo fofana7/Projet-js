@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 50px;
+    }
+    .profile-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 350px;
+      text-align: center;
+    }
+    .profile-card img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+    }
+    .profile-card h2 {
+      margin: 10px 0 5px 0;
+    }
+    .profile-card p {
+      font-size: 14px;
+      color: #555;
+      margin: 5px 0;
+    }
+    .profile-card button {
+      padding: 8px 15px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 6px;
+      background: #007BFF;
+      color: #fff;
+      cursor: pointer;
+    }
+    .profile-card button:hover {
+      background: #0056b3;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="profile-card">
+    <img id="profileAvatar" src="avatar-placeholder.png" alt="Avatar">
+    <h2 id="profilePseudo">Pseudo</h2>
+    <p id="profileEmail">email@exemple.com</p>
+    <p id="profileBio">Ta bio ici...</p>
+
+    <h3>Modifier ton profil</h3>
+    <input type="text" id="editPseudo" placeholder="Pseudo">
+    <input type="file" id="editAvatar">
+    <textarea id="editBio" placeholder="Ta bio"></textarea>
+    <button onclick="updateProfile()">Enregistrer</button>
+  </div>
+
+  <script>
+    // On récupère l'utilisateur courant depuis le localStorage
+    function getUsers() {
+      return JSON.parse(localStorage.getItem("minireseau:users") || "[]");
+    }
+
+    function getSession() {
+      return localStorage.getItem("minireseau:session");
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem("minireseau:users", JSON.stringify(users));
+    }
+
+    function getCurrentUser() {
+      const email = getSession();
+      if(!email) return null;
+      const users = getUsers();
+      return users.find(u => u.email === email);
+    }
+
+    function showProfile() {
+      const user = getCurrentUser();
+      if(!user) {
+        alert("Vous n'êtes pas connecté !");
+        window.location.href = "login.html";
+        return;
+      }
+      document.getElementById("profilePseudo").textContent = user.name;
+      document.getElementById("profileEmail").textContent = user.email;
+      document.getElementById("profileBio").textContent = user.bio || "Ta bio ici...";
+      document.getElementById("editPseudo").value = user.name;
+      document.getElementById("editBio").value = user.bio || "";
+
+      if(user.avatar) {
+        document.getElementById("profileAvatar").src = user.avatar;
+      }
+    }
+
+    function updateProfile() {
+      const user = getCurrentUser();
+      if(!user) return;
+
+      const newPseudo = document.getElementById("editPseudo").value.trim();
+      const newBio = document.getElementById("editBio").value.trim();
+      const avatarFile = document.getElementById("editAvatar").files[0];
+
+      if(newPseudo) user.name = newPseudo;
+      user.bio = newBio;
+
+      if(avatarFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          user.avatar = e.target.result; // sauvegarde l'image en base64
+          saveUsers(getUsers());
+          showProfile();
+        };
+        reader.readAsDataURL(avatarFile);
+      } else {
+        saveUsers(getUsers());
+        showProfile();
+      }
+
+      alert("Profil mis à jour !");
+    }
+
+    // Afficher le profil au chargement
+    showProfile();
+  </script>
+</body>
+</html>
