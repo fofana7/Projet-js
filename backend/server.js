@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
+const path = require('path');
 
 // ======= INIT APP =======
 const app = express();
@@ -31,20 +32,17 @@ app.post('/api/register', async (req, res) => {
   }
 
   try {
-    // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Ajouter l'utilisateur dans la base
     const result = await pool.query(
-  'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
-  [username, email, hashedPassword]
-);
-
+      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
+      [username, email, hashedPassword]
+    );
 
     res.json({ message: 'Utilisateur créé', user: result.rows[0] });
   } catch (err) {
     console.error(err);
-    if (err.code === '23505') { // violation d'unicité
+    if (err.code === '23505') {
       return res.status(400).json({ error: 'Username, pseudo ou email déjà utilisé' });
     }
     res.status(500).json({ error: 'Erreur serveur' });
@@ -60,11 +58,7 @@ app.post('/api/login', async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
-
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user) return res.status(400).json({ error: 'Utilisateur non trouvé' });
 
@@ -76,6 +70,16 @@ app.post('/api/login', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+});
+
+// ======= SERVIR LES FICHIERS STATIQUES =======
+// Assure-toi que index.html, profile.html, style.css, etc. sont au même niveau que server.js
+app.use(express.static(path.join(__dirname)));
+
+// ======= ROUTE SPECIFIQUE PROFILE =======
+// Optionnel : force la livraison de profile.html si express.static ne suffit pas
+app.get('/profil.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'profil.html'));
 });
 
 // ======= LANCER LE SERVEUR =======
