@@ -95,6 +95,7 @@
   </div>
 
   <script>
+    
     // Mini réseau social en JS pur — stockage local + interactions basiques
     const STORAGE_KEY = 'minireseau:v1';
 
@@ -197,6 +198,10 @@
     window.seedSample = seedSample; window.clearAll = clearAll;window.showTab = function(t){
   if (t === 'messages') {
     window.location.href = "messages.html";  
+    return;
+  }
+   if (t === 'profile') {
+    window.location.href = "profil.html";  
     return;
   }
 
