@@ -1,146 +1,450 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profil</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding-top: 50px;
-    }
-    .profile-card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 350px;
-      text-align: center;
-    }
-    .profile-card img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 15px;
-    }
-    .profile-card h2 {
-      margin: 10px 0 5px 0;
-    }
-    .profile-card p {
-      font-size: 14px;
-      color: #555;
-      margin: 5px 0;
-    }
-    .profile-card button {
-      padding: 8px 15px;
-      margin-top: 15px;
-      border: none;
-      border-radius: 6px;
-      background: #007BFF;
-      color: #fff;
-      cursor: pointer;
-    }
-    .profile-card button:hover {
-      background: #0056b3;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Professionnel - MonRéseauPro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #007bff; /* Bleu professionnel */
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #212529;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body { 
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--background-color); 
+            color: var(--text-color); 
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* --- En-tête de profil --- */
+        .profile-header-area { 
+            position: relative; 
+            height: 150px; 
+            margin-bottom: 70px;
+        }
+        .header-bg {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3); 
+            height: 100%; 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--shadow);
+        }
+        .profile-avatar { 
+            position: absolute; 
+            bottom: -50px; 
+            left: 20px; 
+            width: 120px; 
+            height: 120px; 
+            border-radius: 50%; 
+            border: 6px solid var(--background-color); 
+            object-fit: cover; 
+            background-color: var(--card-background);
+        }
+
+        /* --- Informations et Stats --- */
+        .profile-info-section { 
+            padding: 0 20px; 
+            margin-bottom: 30px; 
+        }
+        .profile-pseudo { 
+            margin: 0; 
+            font-size: 2rem; 
+            font-weight: 700; 
+            color: var(--text-color);
+        }
+        .profile-handle { 
+            margin: 5px 0 15px; 
+            font-size: 1rem; 
+            color: var(--secondary-color);
+        }
+        .profile-bio { 
+            margin: 15px 0 25px; 
+            color: #495057; 
+        }
+
+        .stats-bar { 
+            display: flex; 
+            gap: 25px; 
+            padding: 15px 0; 
+            border-top: 1px solid #e9ecef;
+        }
+        .stat-item { 
+            font-size: 0.95rem; 
+            color: var(--secondary-color);
+        }
+        .stat-item span { 
+            font-weight: 600; 
+            color: var(--text-color);
+            margin-right: 4px;
+        }
+
+        /* --- Composants de carte (Sections) --- */
+        .card {
+            margin: 20px 0; 
+            background: var(--card-background); 
+            border-radius: var(--border-radius); 
+            padding: 25px; 
+            box-shadow: var(--shadow);
+        }
+
+        /* --- Section Amis --- */
+        .friends-section h3 { 
+            margin-top: 0; 
+            color: var(--primary-color); 
+            font-size: 1.2rem;
+        }
+        .friends-list { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+            justify-content: flex-start;
+        }
+        .friend-card { 
+            width: 60px;
+            text-align: center; 
+            cursor: pointer; 
+            transition: transform 0.2s, opacity 0.2s; 
+            font-size: 0.8rem;
+        }
+        .friend-card:hover { 
+            transform: translateY(-5px); 
+            opacity: 0.9;
+        }
+        .friend-card img { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 3px solid #ced4da;
+            margin-bottom: 5px; 
+            transition: border-color 0.2s;
+        }
+        .friend-card:hover img {
+            border-color: var(--primary-color);
+        }
+        .friend-card p { 
+            margin: 0; 
+            word-break: break-word; 
+            line-height: 1.2;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        /* --- Formulaire de modification --- */
+        .edit-form-content h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .edit-form-content label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .edit-form-content input[type="text"], 
+        .edit-form-content input[type="file"], 
+        .edit-form-content textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 5px 0 10px; 
+            border-radius: 8px; 
+            border: 1px solid #dee2e6; 
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .edit-form-content input:focus, .edit-form-content textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .edit-form-content textarea { 
+            resize: vertical; 
+            min-height: 80px; 
+        }
+        .edit-form-content button { 
+            background: var(--primary-color); 
+            color: #fff; 
+            border: none; 
+            border-radius: 8px; 
+            padding: 12px 20px; 
+            margin-top: 20px;
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: background-color 0.2s;
+        }
+        .edit-form-content button:hover { 
+            background: #0056b3; 
+        }
+
+        .success-msg { 
+            text-align: center; 
+            color: #28a745; 
+            font-weight: 600; 
+            display: none; 
+            margin-top: 15px; 
+            padding: 10px;
+            background-color: #d4edda;
+            border-radius: 8px;
+        }
+
+        /* --- Responsive basique --- */
+        @media(max-width: 768px){
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            .profile-avatar { 
+                width: 100px; 
+                height: 100px; 
+                bottom: -40px; 
+                left: 10px;
+            }
+            .profile-header-area {
+                margin-bottom: 50px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="profile-card">
-    <img id="profileAvatar" src="avatar-placeholder.png" alt="Avatar">
-    <h2 id="profilePseudo">Pseudo</h2>
-    <p id="profileEmail">email@exemple.com</p>
-    <p id="profileBio">Ta bio ici...</p>
+<div id="profileApp" class="container">
+    
+    <header class="profile-header-area">
+        <div class="header-bg"></div>
+        <img id="profileAvatar" class="profile-avatar" src="avatar-placeholder.png" alt="Avatar de l'utilisateur">
+    </header>
 
-    <h3>Modifier ton profil</h3>
-    <input type="text" id="editPseudo" placeholder="Pseudo">
-    <input type="file" id="editAvatar">
-    <textarea id="editBio" placeholder="Ta bio"></textarea>
-    <button onclick="updateProfile()">Enregistrer</button>
-  </div>
+    <section class="profile-info-section">
+        <h2 id="profilePseudo" class="profile-pseudo">Pseudo</h2>
+        <p id="profileEmail" class="profile-handle">email@exemple.com</p>
+        <p id="profileBio" class="profile-bio">Ta bio ici...</p>
+        
+        <div class="stats-bar">
+            <div class="stat-item"><span id="friendsCount">0</span> Amis</div>
+            <div class="stat-item"><span id="followersCount">0</span> Followers</div>
+            <div class="stat-item"><span id="postsCount">0</span> Publications</div>
+        </div>
+    </section>
 
-  <script>
-    // On récupère l'utilisateur courant depuis le localStorage
-    function getUsers() {
-      return JSON.parse(localStorage.getItem("minireseau:users") || "[]");
-    }
+    <section class="friends-section card">
+        <h3>👥 Connexions Récents</h3>
+        <div class="friends-list" id="friendsList">
+            </div>
+    </section>
 
-    function getSession() {
-      return localStorage.getItem("minireseau:session");
-    }
+    <section class="edit-form-section card">
+        <h3>⚙️ Modifier le profil</h3>
+        <form id="profileEditForm" class="edit-form-content">
+            <label for="editPseudo">Nom d'utilisateur</label>
+            <input type="text" id="editPseudo" required>
 
-    function saveUsers(users) {
-      localStorage.setItem("minireseau:users", JSON.stringify(users));
-    }
+            <label for="editAvatar">Changer d'avatar (Optionnel)</label>
+            <input type="file" id="editAvatar" accept="image/*">
 
-    function getCurrentUser() {
-      const email = getSession();
-      if(!email) return null;
-      const users = getUsers();
-      return users.find(u => u.email === email);
-    }
+            <label for="editBio">Biographie</label>
+            <textarea id="editBio" maxlength="160"></textarea>
 
-    function showProfile() {
-      const user = getCurrentUser();
-      if(!user) {
-        alert("Vous n'êtes pas connecté !");
-        window.location.href = "login.html";
-        return;
-      }
-      document.getElementById("profilePseudo").textContent = user.name;
-      document.getElementById("profileEmail").textContent = user.email;
-      document.getElementById("profileBio").textContent = user.bio || "Ta bio ici...";
-      document.getElementById("editPseudo").value = user.name;
-      document.getElementById("editBio").value = user.bio || "";
+            <button type="submit" id="saveButton">Enregistrer les modifications</button>
+            <div class="success-msg" id="successMsg">Profil mis à jour avec succès !</div>
+        </form>
+    </section>
+</div>
 
-      if(user.avatar) {
-        document.getElementById("profileAvatar").src = user.avatar;
-      }
-    }
+<script>
+    // Constantes
+    const STORAGE_KEY = "minireseaupro:user_profile";
+    const DEFAULT_AVATAR = "avatar-placeholder.png";
 
-    function updateProfile() {
-      const user = getCurrentUser();
-      if(!user) return;
+    /**
+     * Logique pour gérer les données de l'utilisateur (Modèle).
+     */
+    const UserData = {
+        // Profil par défaut pour la première visite
+        defaultProfile: {
+            username: "John Doe Pro",
+            email: "john.doe@monreseau.com",
+            bio: "Développeur Full-Stack passionné. J'aime le JavaScript propre et modulaire. Toujours à la recherche de nouveaux défis.",
+            avatar: DEFAULT_AVATAR,
+            friends: [
+                { username: "Alice_Dev", avatar: "https://i.pravatar.cc/60?img=1" },
+                { username: "Bob_UX", avatar: "https://i.pravatar.cc/60?img=2" },
+                { username: "Charlie_PM", avatar: "https://i.pravatar.cc/60?img=3" },
+                { username: "Dana_Mark", avatar: "https://i.pravatar.cc/60?img=4" },
+                { username: "Eve_Analyst", avatar: "https://i.pravatar.cc/60?img=5" }
+            ],
+            followers: 1250,
+            posts: 42
+        },
 
-      const newPseudo = document.getElementById("editPseudo").value.trim();
-      const newBio = document.getElementById("editBio").value.trim();
-      const avatarFile = document.getElementById("editAvatar").files[0];
+        // Récupère l'utilisateur actuel (ou le profil par défaut)
+        getCurrentUser() {
+            try {
+                const user = localStorage.getItem(STORAGE_KEY);
+                return user ? JSON.parse(user) : this.defaultProfile;
+            } catch (error) {
+                console.error("Erreur de lecture LocalStorage:", error);
+                return this.defaultProfile;
+            }
+        },
 
-      if(newPseudo) user.name = newPseudo;
-      user.bio = newBio;
+        // Sauvegarde les données de l'utilisateur
+        saveUser(user) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+            } catch (error) {
+                console.error("Erreur d'écriture LocalStorage:", error);
+            }
+        }
+    };
 
-      if(avatarFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          user.avatar = e.target.result; // sauvegarde l'image en base64
-          saveUsers(getUsers());
-          showProfile();
-        };
-        reader.readAsDataURL(avatarFile);
-      } else {
-        saveUsers(getUsers());
-        showProfile();
-      }
+    /**
+     * Logique pour l'affichage et les interactions de l'interface (Vue/Contrôleur).
+     */
+    const ProfileManager = {
+        // Références aux éléments du DOM
+        elements: {
+            pseudo: document.getElementById("profilePseudo"),
+            email: document.getElementById("profileEmail"),
+            bio: document.getElementById("profileBio"),
+            avatar: document.getElementById("profileAvatar"),
+            friendsCount: document.getElementById("friendsCount"),
+            followersCount: document.getElementById("followersCount"),
+            postsCount: document.getElementById("postsCount"),
+            friendsList: document.getElementById("friendsList"),
+            
+            editForm: document.getElementById("profileEditForm"),
+            editPseudo: document.getElementById("editPseudo"),
+            editBio: document.getElementById("editBio"),
+            editAvatar: document.getElementById("editAvatar"),
+            successMsg: document.getElementById("successMsg"),
+            saveButton: document.getElementById("saveButton")
+        },
 
-      alert("Profil mis à jour !");
-    }
+        // Initialise l'application
+        init() {
+            this.bindEvents();
+            this.loadProfile();
+        },
 
-    // Afficher le profil au chargement
-    showProfile();
-  </script>
+        // Attache les écouteurs d'événements
+        bindEvents() {
+            this.elements.editForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleProfileUpdate();
+            });
+        },
+
+        // Affiche les données de l'utilisateur sur la page
+        loadProfile() {
+            const user = UserData.getCurrentUser();
+
+            // 1. Mise à jour des informations de base
+            this.elements.pseudo.textContent = user.username;
+            this.elements.email.textContent = user.email;
+            this.elements.bio.textContent = user.bio || "Bio non renseignée.";
+            this.elements.avatar.src = user.avatar;
+
+            // 2. Mise à jour des statistiques
+            this.elements.friendsCount.textContent = user.friends.length;
+            this.elements.followersCount.textContent = user.followers || 0;
+            this.elements.postsCount.textContent = user.posts || 0;
+
+            // 3. Remplissage du formulaire d'édition
+            this.elements.editPseudo.value = user.username;
+            this.elements.editBio.value = user.bio || "";
+            
+            // 4. Rendu de la liste d'amis
+            this.renderFriends(user.friends);
+        },
+
+        // Génère le HTML pour une carte d'ami
+        createFriendCard(friend) {
+            const div = document.createElement("div");
+            div.className = "friend-card";
+            div.innerHTML = `<img src="${friend.avatar}" alt="${friend.username}">
+                            <p>${friend.username}</p>`;
+            div.onclick = () => console.log(`Redirection vers le profil de ${friend.username}`);
+            return div;
+        },
+
+        // Affiche la liste d'amis
+        renderFriends(friends) {
+            const container = this.elements.friendsList;
+            container.innerHTML = ""; // Vide le contenu précédent
+            friends.forEach(friend => {
+                container.appendChild(this.createFriendCard(friend));
+            });
+        },
+
+        // Gère la soumission du formulaire
+        handleProfileUpdate() {
+            this.elements.saveButton.disabled = true; // Empêche les clics multiples
+            
+            const currentUser = UserData.getCurrentUser();
+            const newPseudo = this.elements.editPseudo.value.trim();
+            const newBio = this.elements.editBio.value.trim();
+            const avatarFile = this.elements.editAvatar.files[0];
+
+            // 1. Mise à jour immédiate des champs texte
+            if (newPseudo) currentUser.username = newPseudo;
+            currentUser.bio = newBio;
+
+            // 2. Gestion asynchrone du fichier avatar
+            if (avatarFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentUser.avatar = e.target.result;
+                    this.saveAndReload(currentUser);
+                };
+                reader.onerror = (e) => {
+                    console.error("Erreur de lecture de fichier:", e);
+                    this.saveAndReload(currentUser); // Sauvegarde sans l'avatar si erreur
+                };
+                reader.readAsDataURL(avatarFile);
+            } else {
+                this.saveAndReload(currentUser);
+            }
+        },
+        
+        // Sauvegarde les données, recharge l'affichage et montre la notification
+        saveAndReload(user) {
+            UserData.saveUser(user);
+            this.loadProfile(); // Recharge l'affichage avec les nouvelles données
+            this.showSuccessMessage();
+            this.elements.saveButton.disabled = false; // Réactive le bouton
+            this.elements.editAvatar.value = ''; // Réinitialise l'input file
+        },
+
+        // Affichage du message de succès
+        showSuccessMessage() {
+            const msg = this.elements.successMsg;
+            msg.style.display = "block";
+            setTimeout(() => { 
+                msg.style.display = "none"; 
+            }, 2500);
+        }
+    };
+
+    // Démarrage de l'application une fois que le DOM est prêt
+    document.addEventListener('DOMContentLoaded', () => {
+        ProfileManager.init();
+    });
+</script>
 </body>
 </html>

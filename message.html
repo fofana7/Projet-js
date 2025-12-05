@@ -1,0 +1,269 @@
+
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MiniRéseau Étudiants — Messagerie multimédia</title>
+<style>
+:root{
+  --bg:#0f1720; --card:#0b1220; --muted:#9aa4b2; --accent:#0b84ff; --glass: rgba(255,255,255,0.03);
+  --radius:12px; --gap:14px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#071021 0%, #081827 100%);color:#e6eef8}
+.app{max-width:1100px;margin:28px auto;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:14px;overflow:hidden;box-shadow:0 6px 28px rgba(2,6,23,0.6)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.03);gap:12px}
+.topbar .left{display:flex;gap:12px;align-items:center}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:transparent;color:white}
+.nav{display:flex;gap:12px;margin-top:10px;margin-bottom:10px}
+.nav button.active{background:var(--accent);color:white}
+.content{display:flex;gap:16px;padding:16px}
+.sidebar{width:280px;max-height:70vh;overflow:auto;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+.card{padding:12px;border-radius:12px;background:var(--card)}
+.conv{display:flex;justify-content:space-between;gap:10px;padding:10px;border-radius:10px;align-items:center;cursor:pointer;transition:0.2s}
+.conv:hover{background:rgba(255,255,255,0.02)}
+.avatar{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;background:linear-gradient(180deg,#0b84ff22,#4ab3ff11);color:#fff}
+.conv strong{display:block}
+.conv .text{font-size:13px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .right{text-align:right;min-width:60px}
+.unread-badge{background:#ff5b5b;padding:3px 6px;border-radius:999px;color:white;font-size:12px;animation:pulse 1s infinite alternate;}
+@keyframes pulse{from{opacity:0.8}to{opacity:1}}
+.main{flex:1;display:flex;flex-direction:column;max-height:70vh}
+.chat-header{padding:12px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center}
+.chat-header .info{display:flex;gap:12px;align-items:center}
+.chat-header .title{font-size:16px;font-weight:600}
+.chat-header .status{font-size:12px;color:lime}
+.messages-list{padding:14px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:6px}
+.msg{max-width:72%;padding:12px;border-radius:12px;background:var(--glass);line-height:1.35;position:relative;transition:0.1s;word-break:break-word}
+.msg:hover{transform:translateY(-1px)}
+.msg.me{margin-left:auto;background:linear-gradient(90deg, rgba(11,132,255,0.16), rgba(11,132,255,0.08));}
+.msg .meta{font-size:13px;color:var(--muted);margin-bottom:6px}
+.msg .meta span{margin-left:6px;font-size:11px;color:var(--muted)}
+.composer-row{display:flex;gap:10px;padding:12px;border-top:1px solid rgba(255,255,255,0.02);align-items:end}
+.composer-row textarea{flex:1;padding:10px;border-radius:10px;border:0;background:rgba(255,255,255,0.02);color:inherit;min-height:44px;resize:none}
+.composer-row input[type=file]{display:none}
+.file-btn{border:1px solid rgba(255,255,255,0.04);padding:6px 10px;border-radius:10px;color:var(--muted);cursor:pointer;background:transparent}
+.empty{text-align:center;padding:28px;color:var(--muted)}
+img.chat-image{max-width:200px;border-radius:10px;margin-top:6px}
+a.chat-file{display:block;color:var(--accent);text-decoration:underline;margin-top:4px}
+@media (max-width:900px){.content{flex-direction:column}.sidebar{width:100%;max-height:36vh}.main{max-height:48vh}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="left">
+      <button class="btn" onclick="window.location.href='index.html'">← Retour</button>
+      <strong>MiniRéseau Étudiants</strong>
+    </div>
+    <div class="nav">
+      <button id="tabPrivate" class="active">Messagerie privée</button>
+      <button id="tabGroup">Groupes / Projets</button>
+      <button id="tabForum">Forum Q&R</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="sidebar card" id="sidebar">Sélectionner une conversation</div>
+    <div class="main card">
+      <div class="chat-header">
+        <div class="info">
+          <div class="avatar" id="chatAvatar">U</div>
+          <div>
+            <div class="title" id="chatTitle">Sélectionner une conversation</div>
+            <div class="status" id="chatStatus">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="messages-list" id="messagesList">
+        <div class="empty">Aucune conversation sélectionnée</div>
+      </div>
+      <div class="composer-row">
+        <textarea id="messageInput" placeholder="Écrire un message..." rows="1"></textarea>
+        <label class="file-btn" for="fileInput">📎</label>
+        <input type="file" id="fileInput">
+        <button class="btn primary" id="sendBtn">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='minireseau_etudiants_multimedia';
+let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{"me":{"id":"me","name":"Utilisateur Demo"},"private":[], "groups":[], "forum":[]}');
+let currentTab='private';
+let currentId=null;
+
+const sidebar=document.getElementById('sidebar');
+const messagesList=document.getElementById('messagesList');
+const chatTitle=document.getElementById('chatTitle');
+const chatStatus=document.getElementById('chatStatus');
+const chatAvatar=document.getElementById('chatAvatar');
+const messageInput=document.getElementById('messageInput');
+const fileInput=document.getElementById('fileInput');
+
+const tabPrivate=document.getElementById('tabPrivate');
+const tabGroup=document.getElementById('tabGroup');
+const tabForum=document.getElementById('tabForum');
+
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2,9);
+const initials=n=>(n||'U').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+const safeText=t=>{const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+const formatRelative=ts=>{const d=(Date.now()-ts)/1000;if(d<60)return"à l’instant";if(d<3600)return Math.round(d/60)+" min";if(d<86400)return Math.round(d/3600)+" h";return new Date(ts).toLocaleString();}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+
+// ---------- SEED EXEMPLE ----------
+function seedExample(){
+  if(state.private.length===0){
+    state.private.push({
+      id:uid(), title:'Alice', participants:['Alice', state.me.name],
+      messages:[
+        {id:uid(), author:'Alice', authorId:'alice', text:'Salut !', ts:Date.now()-3600000, read:false},
+        {id:uid(), author:state.me.name, authorId:state.me.id, text:'Salut Alice, comment ça va ?', ts:Date.now()-3500000, read:true},
+        {id:uid(), author:'Alice', authorId:'alice', dataUrl:'https://via.placeholder.com/150', fileName:'photo.png', ts:Date.now()-3400000, read:false}
+      ], lastTs:Date.now()-3400000
+    });
+  }
+  if(state.groups.length===0){
+    state.groups.push({
+      id:uid(), title:'Projet X', participants:[state.me.name,'Bob','Charlie'],
+      messages:[
+        {id:uid(), author:'Bob', authorId:'bob', text:'Bonjour à tous', ts:Date.now()-1800000, read:false},
+        {id:uid(), author:'Charlie', authorId:'charlie', text:'Salut, je commence à travailler sur la partie front', ts:Date.now()-1700000, read:false}
+      ], lastTs:Date.now()-1700000
+    });
+  }
+  if(state.forum.length===0){
+    state.forum.push({
+      id:uid(), title:'Mathématiques 101',
+      messages:[
+        {id:uid(), author:'Prof', authorId:'prof', text:'Bienvenue sur le forum', ts:Date.now()-7200000, read:false}
+      ], lastTs:Date.now()-7200000
+    });
+  }
+  save();
+}
+
+// ---------- RENDER SIDEBAR ----------
+function renderSidebar(){
+  sidebar.innerHTML='';
+  let list=[];
+  if(currentTab==='private') list=state.private;
+  if(currentTab==='groups') list=state.groups;
+  if(currentTab==='forum') list=state.forum;
+  if(list.length===0){sidebar.innerHTML='<div class="empty">Aucune conversation</div>'; return;}
+  list.forEach(c=>{
+    const div=document.createElement('div'); div.className='conv'; div.dataset.id=c.id;
+    const av=document.createElement('div'); av.className='avatar'; av.textContent=initials(c.title);
+    const txt=document.createElement('div');
+    const strong=document.createElement('strong'); strong.textContent=c.title; txt.appendChild(strong);
+    const preview=document.createElement('div'); preview.className='text';
+    const last=c.messages&&c.messages.length?c.messages[c.messages.length-1]:null;
+    if(last){ preview.innerHTML=last.text?safeText(last.text).slice(0,120):last.fileName||'Fichier';}
+    else preview.innerHTML="<span class='small-muted'>Aucun message</span>";
+    txt.appendChild(preview);
+    const right=document.createElement('div'); right.className='right';
+    if(last){const time=document.createElement('div');time.className='small-muted';time.textContent=formatRelative(last.ts);right.appendChild(time);}
+    div.appendChild(av); div.appendChild(txt); div.appendChild(right);
+    div.onclick=()=>openConversation(c.id);
+    sidebar.appendChild(div);
+  });
+}
+
+// ---------- RENDER MESSAGES ----------
+function renderMessages(){
+  messagesList.innerHTML='';
+  if(!currentId){messagesList.innerHTML='<div class="empty">Sélectionner une conversation</div>'; return;}
+  let list=[];
+  if(currentTab==='private') list=state.private;
+  if(currentTab==='groups') list=state.groups;
+  if(currentTab==='forum') list=state.forum;
+  const conv=list.find(c=>c.id===currentId);
+  if(!conv||!conv.messages||!conv.messages.length){messagesList.innerHTML='<div class="empty">Aucun message</div>'; return;}
+  let lastAuthor='';
+  conv.messages.forEach(m=>{
+    const d=document.createElement('div'); d.className='msg '+(m.authorId===state.me.id?'me':'other');
+    const meta=document.createElement('div'); meta.className='meta';
+    if(m.author!==lastAuthor){const s=document.createElement('strong'); s.textContent=m.author; meta.appendChild(s);} 
+    const when=document.createElement('span'); when.textContent=formatRelative(m.ts); meta.appendChild(when);
+    lastAuthor=m.author;
+    const body=document.createElement('div');
+    if(m.text) body.innerHTML=safeText(m.text).replace(/\n/g,'<br>');
+    if(m.dataUrl && m.fileName){
+      if(m.dataUrl.startsWith('data:image') || m.dataUrl.startsWith('https://')) {
+        const img=document.createElement('img'); img.src=m.dataUrl; img.className='chat-image'; body.appendChild(img);
+      } else {
+        const a=document.createElement('a'); a.href=m.dataUrl; a.textContent=m.fileName; a.className='chat-file'; a.download=m.fileName; body.appendChild(a);
+      }
+    }
+    d.appendChild(meta); d.appendChild(body); messagesList.appendChild(d);
+  });
+  messagesList.scrollTop=messagesList.scrollHeight;
+}
+
+// ---------- OPEN CONVERSATION ----------
+function openConversation(id){
+  currentId=id;
+  let list=[];
+  if(currentTab==='private') list=state.private;
+  if(currentTab==='groups') list=state.groups;
+  if(currentTab==='forum') list=state.forum;
+  const conv=list.find(c=>c.id===id);
+  if(!conv) return;
+  chatTitle.textContent=conv.title;
+  chatAvatar.textContent=initials(conv.title);
+  chatStatus.textContent=currentTab==='private'?Math.random()>0.5?'En ligne':'Hors ligne':'';
+  if(conv.messages) conv.messages.forEach(m=>{if(m.authorId!==state.me.id)m.read=true;});
+  renderSidebar(); renderMessages(); save();
+}
+
+// ---------- SEND MESSAGE ----------
+function sendMessage(){
+  if(!currentId) return;
+  const text=messageInput.value.trim();
+  const file=fileInput.files[0];
+  if(!text && !file) return;
+  messageInput.value=''; fileInput.value='';
+  const msg={id:uid(),author:state.me.name,authorId:state.me.id,ts:Date.now(),read:true};
+  if(text) msg.text=text;
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{msg.dataUrl=e.target.result; msg.fileName=file.name; appendMessage(msg);}
+    reader.readAsDataURL(file);
+  } else appendMessage(msg);
+}
+
+function appendMessage(msg){
+  let list=[];
+  if(currentTab==='private') list=state.private;
+  if(currentTab==='groups') list=state.groups;
+  if(currentTab==='forum') list=state.forum;
+  const conv=list.find(c=>c.id===currentId);
+  if(!conv.messages) conv.messages=[];
+  conv.messages.push(msg);
+  renderSidebar(); renderMessages(); save();
+}
+
+// ---------- SWITCH TAB ----------
+function switchTab(tab){
+  currentTab=tab; currentId=null;
+  tabPrivate.classList.toggle('active',tab==='private');
+  tabGroup.classList.toggle('active',tab==='groups');
+  tabForum.classList.toggle('active',tab==='forum');
+  renderSidebar(); renderMessages();
+}
+
+// ---------- EVENTS ----------
+tabPrivate.onclick=()=>switchTab('private');
+tabGroup.onclick=()=>switchTab('groups');
+tabForum.onclick=()=>switchTab('forum');
+document.getElementById('sendBtn').onclick=sendMessage;
+messageInput.addEventListener('keydown',e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}});
+
+// ---------- INIT ----------
+seedExample();
+renderSidebar();
+</script>
+</body>
+</html>

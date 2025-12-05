@@ -1,209 +1,664 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>MiniRéseau — Exemple de page</title>
-
-  <!-- Lien vers le fichier CSS -->
-  <link rel="stylesheet" href="style.css">
-
-  
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MiniRéseau — Fil</title>
+    <!-- Chargement de Tailwind CSS pour les utilitaires de base (hidden, flex, etc.) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Votre feuille de style personnalisée -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Styles pour masquer/afficher les vues dans un contexte SPA */
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; flex-direction: column; } /* Pour la timeline */
+        #profile-view.active { display: block; } /* Pour le profil */
+        .auth-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0, 0, 0, 0.8); z-index: 1000;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="logo">
-        <div class="dot">MR</div>
-        <div class="name"><strong>MiniRéseau</strong><div class="small">Un prototype social</div></div>
-      </div>
-      <div class="search">
-        <input id="searchInput" placeholder="Rechercher personnes ou posts..." />
-      </div>
-      <div class="nav-actions">
-        <button class="btn" id="notifyBtn">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
-        <button class="btn" id="newPostBtn">➕ Nouveau</button>
-      </div>
-    </header>
+    
+    <!-- Zone pour afficher les messages (erreurs/succès) - Absolue ou Fixe -->
+    <div id="message-container" class="fixed top-4 right-4 z-[1001] w-full max-w-sm"></div>
 
-    <!-- Left column -->
-    <aside>
-      <div class="card">
-        <div class="profile">
-          <div class="avatar" id="myAvatar">TU</div>
-          <div>
-            <div id="myName"><strong>Utilisateur Demo</strong></div>
-            <div class="muted">@demo · Membre</div>
-          </div>
+    <!-- WRAPPER PRINCIPAL (Contenu de l'application) -->
+    <div class="wrap" id="app-wrap">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">
+                <div class="dot">MR</div>
+                <div class="name">
+                    <strong>MiniRéseau</strong>
+                    <div class="small">Un prototype social</div>
+                </div>
+            </div>
+            <div class="search">
+                <input id="searchInput" placeholder="Rechercher personnes ou posts..." />
+            </div>
+            <div class="nav-actions">
+                <!-- Ces boutons sont masqués si déconnecté, sinon on garde la nav -->
+                <button class="btn" id="notifyBtn">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
+                <button class="btn" id="newPostBtn">➕ Nouveau</button>
+                <button class="btn" id="logoutBtn" onclick="logout()">🚪 Déconnexion</button>
+            </div>
+        </header>
+
+        <!-- LEFT COLUMN -->
+        <aside id="left-column">
+            <div class="card">
+                <div class="profile">
+                    <div class="avatar" id="myAvatar">U?</div>
+                    <div>
+                        <div id="myName"><strong>Chargement...</strong></div>
+                        <div class="muted" id="myHandle">@guest · Statut</div>
+                    </div>
+                </div>
+                <nav class="menu">
+                  <!-- Les liens dirigent vers les ID de section -->
+                  <button id="feed-btn" onclick="showTab('feed')">🏠 Fil</button>
+                  <button id="messages-btn" onclick="showTab('messages')">💬 Messages</button>
+                  <button id="friends-btn" onclick="showTab('friends')">👥 Amis</button>
+
+
+                  <button id="profile-btn" onclick="location.href='profil.html'">🧾 Profil</button>
+                  <button id="messages-btn" onclick="location.href='message.html'">🧾 Messages</button>
+                  <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                  
+
+                </nav>
+            </div>
+
+            <div style="height:12px"></div>
+
+            <div class="card small">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div><strong>Statistiques</strong></div>
+                    <div class="muted">en local</div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <div class="pill">Posts <div id="statPosts" style="font-weight:700">0</div></div>
+                    <div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MIDDLE: FEED -->
+        <main id="feed-tab" class="tab-content active">
+            <div class="card composer">
+                <textarea id="composer" placeholder="Quoi de neuf ?"></textarea>
+                <div class="row">
+                    <div class="small muted">Vous pouvez publier du texte et des hashtags (#) — prototype.</div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn" id="clearBtn">Effacer</button>
+                        <button class="btn" id="publishBtn">Publier</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feed" id="feed"></div>
+            <div id="emptyFeed" class="center muted" style="padding:20px;display:none">
+                Aucun post pour l'instant — soyez le premier !
+            </div>
+        </main>
+        
+        <!-- MIDDLE: PROFIL UTILISATEUR (Nouvelle section) -->
+        <main id="profile-tab" class="tab-content">
+            <div id="profile-view" class="card">
+                <h2>Mon Profil</h2>
+                <div style="display:flex;align-items:center;gap:15px;margin-top:15px;padding-bottom:15px;border-bottom:1px solid var(--border)">
+                    <div class="avatar" style="width:60px;height:60px;font-size:24px" id="profile-avatar"></div>
+                    <div>
+                        <h3 id="profile-full-name" style="font-weight:bold;font-size:1.5em"></h3>
+                        <div class="muted">@<span id="profile-username"></span></div>
+                    </div>
+                </div>
+                
+                <div style="margin-top:20px">
+                    <div class="row-info">
+                        <strong>Email :</strong> <span id="profile-email"></span>
+                    </div>
+                    <div class="row-info">
+                        <strong>Membre depuis :</strong> <span id="profile-created-at"></span>
+                    </div>
+                </div>
+                
+                <p style="margin-top:20px" class="muted">
+                    Ici, vous pourrez bientôt modifier vos informations.
+                </p>
+            </div>
+        </main>
+        
+        <!-- MIDDLE: OTHER TABS (Messages / Friends - Stubs) -->
+        <main id="messages-tab" class="tab-content">
+             <div class="card"><h2>💬 Messages (En construction)</h2><p class="muted">Cette section n'est pas encore implémentée avec l'API.</p></div>
+        </main>
+        <main id="friends-tab" class="tab-content">
+             <div class="card"><h2>👥 Amis (En construction)</h2><p class="muted">Cette section n'est pas encore implémentée avec l'API.</p></div>
+        </main>
+
+        <!-- RIGHT COLUMN -->
+        <aside class="right-section">
+            <div class="card">
+                <strong>Suggestions</strong>
+                <div class="suggest" id="suggestions"></div>
+            </div>
+
+            <div class="card small">
+                <strong>Raccourcis</strong>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+                    <button class="btn" onclick="seedSample()">Générer exemple</button>
+                    <button class="btn" onclick="clearAll()">Réinitialiser</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- VUES D'AUTHENTIFICATION (OVERLAY) -->
+    <div id="auth-overlay" class="auth-overlay flex justify-center items-center">
+        <!-- 1. VUE DE CONNEXION -->
+        <div id="view-login" class="w-full max-w-md bg-white p-8 rounded-xl form-card card" style="display: block;">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Connexion</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="login-email" class="block text-sm font-medium text-gray-700">Email étudiant</label>
+                    <input type="email" id="login-email" name="email" required 
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+
+                <div class="mb-6">
+                    <label for="login-password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                    <input type="password" id="login-password" name="password" required 
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 btn" style="margin-top:10px">Se Connecter</button>
+            </form>
+            <p class="mt-4 text-center text-sm text-gray-600">
+                Pas encore de compte ? <button onclick="showAuthView('register')" class="text-indigo-600 hover:text-indigo-800 font-medium btn" style="color:#4f46e5;text-decoration:underline">Inscrivez-vous</button>
+            </p>
         </div>
-        <nav class="menu">
-          <button onclick="showTab('feed')">🏠 Fil</button>
-          <button onclick="showTab('messages')">💬 Messages</button>
-          <button onclick="showTab('friends')">👥 Amis</button>
-          <button onclick="showTab('profile')">🧾 Profil</button>
-        </nav>
-      </div>
+        
+        <!-- 2. VUE D'INSCRIPTION -->
+        <div id="view-register" class="w-full max-w-md bg-white p-8 rounded-xl form-card card" style="display: none;">
+             <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Inscription</h2>
+                <form id="register-form">
+                    
+                    <div class="mb-4">
+                        <label for="register-first-name" class="block text-sm font-medium text-gray-700">Prénom</label>
+                        <input type="text" id="register-first-name" name="first_name" required 
+                               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="register-last-name" class="block text-sm font-medium text-gray-700">Nom</label>
+                        <input type="text" id="register-last-name" name="last_name" required 
+                               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="register-username" class="block text-sm font-medium text-gray-700">Nom d'utilisateur</label>
+                        <input type="text" id="register-username" name="username" required 
+                               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="register-email" class="block text-sm font-medium text-gray-700">Email étudiant (@esme.fr)</label>
+                        <input type="email" id="register-email" name="email" required 
+                               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
 
-      <div style="height:12px"></div>
+                    <div class="mb-6">
+                        <label for="register-password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                        <input type="password" id="register-password" name="password" required 
+                               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
 
-      <div class="card small">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Statistiques</strong></div>
-          <div class="muted">en local</div>
+                    <button type="submit" 
+                            class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 btn" style="margin-top:10px">S'inscrire</button>
+                </form>
+                <p class="mt-4 text-center text-sm text-gray-600">
+                    Déjà un compte ? <button onclick="showAuthView('login')" class="text-indigo-600 hover:text-indigo-800 font-medium btn" style="color:#4f46e5;text-decoration:underline">Connectez-vous</button>
+                </p>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <div class="pill">Posts <div id="statPosts" style="font-weight:700">0</div></div>
-          <div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
-        </div>
-      </div>
-    </aside>
+    </div>
 
-    <!-- Middle: feed -->
-    <main>
-      <div class="card composer">
-        <textarea id="composer" placeholder="Quoi de neuf ?"></textarea>
-        <div class="row">
-          <div class="small muted">Vous pouvez publier du texte et des hashtags (#) — prototype.</div>
-          <div style="display:flex;gap:8px">
-            <button class="btn" id="clearBtn">Effacer</button>
-            <button class="btn" id="publishBtn">Publier</button>
-          </div>
-        </div>
-      </div>
 
-      <div class="feed" id="feed"></div>
-      <div id="emptyFeed" class="center muted" style="padding:20px;display:none">Aucun post pour l'instant — soyez le premier !</div>
-    </main>
+    <script>
+        // =======================
+        // VARIABLES & STATE API
+        // =======================
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const STORAGE_KEY = 'minireseau:v1'; // Clé pour les posts/amis locaux
+        
+        let currentUser = null; // Informations utilisateur (ID, nom, prénom, etc.)
+        let is_authenticated = false;
 
-    <!-- Right column -->
-    <aside class="right-section">
-      <div class="card">
-        <strong>Suggestions</strong>
-        <div class="suggest" id="suggestions"></div>
-      </div>
+        // Éléments du DOM principaux
+        const appWrap = document.getElementById('app-wrap');
+        const authOverlay = document.getElementById('auth-overlay');
+        const leftColumn = document.getElementById('left-column');
+        
+        // État pour les posts/amis (conservé temporairement)
+        let localState = {posts:[], friends:[], notifications:[]};
+        
+        // Éléments du DOM pour l'affichage utilisateur
+        const myNameEl = document.getElementById('myName');
+        const myAvatarEl = document.getElementById('myAvatar');
+        const myHandleEl = document.getElementById('myHandle');
 
-      <div class="card small">
-        <strong>Raccourcis</strong>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-          <button class="btn" onclick="seedSample()">Générer exemple</button>
-          <button class="btn" onclick="clearAll()">Réinitialiser</button>
-        </div>
-      </div>
-    </aside>
-  </div>
+        // ====================================================================
+        // GESTION DES MESSAGES D'ERREUR/SUCCÈS
+        // ====================================================================
+window.goToProfile = function() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
 
-  <script>
-    // Mini réseau social en JS pur — stockage local + interactions basiques
-    const STORAGE_KEY = 'minireseau:v1';
+            if (!token || !user) {
+                alert("Veuillez vous connecter pour accéder à votre profil.");
+                showAuthView("login");
+                return;
+            }
 
-    // DOM
-    const feedEl = document.getElementById('feed');
-    const composer = document.getElementById('composer');
-    const publishBtn = document.getElementById('publishBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const suggestionsEl = document.getElementById('suggestions');
-    const statPosts = document.getElementById('statPosts');
-    const statFriends = document.getElementById('statFriends');
-    const notifCount = document.getElementById('notifCount');
+            window.location.href = "profile.html"; // Redirection réelle
+        };
+        function showMessage(message, type = 'error') {
+            const container = document.getElementById('message-container');
+            const color = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+            
+            // Utilisation de classes Tailwind pour la carte d'alerte
+            container.innerHTML = `
+                <div class="${color} border px-4 py-3 rounded-lg relative shadow-lg mb-2" role="alert">
+                    <span class="block sm:inline">${message}</span>
+                    <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="this.parentNode.remove()">
+                        <svg class="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.697l-2.651 2.652a1.2 1.2 0 1 1-1.697-1.697L8.303 10 5.651 7.348a1.2 1.2 0 1 1 1.697-1.697L10 8.303l2.651-2.652a1.2 1.2 0 0 1 1.697 1.697L11.697 10l2.652 2.651a1.2 1.2 0 0 1 0 1.697z"/></svg>
+                    </span>
+                </div>
+            `;
+            setTimeout(() => {
+                if (container.firstChild) {
+                    container.firstChild.remove();
+                }
+            }, 5000);
+        }
 
-    // State
-    let state = {me:{name:'Utilisateur Demo',handle:'@demo'},posts:[],friends:[],notifications:[]};
+        // ====================================================================
+        // GESTION DE LA VUE & NAVIGATION
+        // ====================================================================
+        
+        /**
+         * Bascule l'affichage entre les différentes vues (onglets) de l'application.
+         * @param {string} tabId - L'ID de l'onglet à afficher (ex: 'feed', 'profile').
+         */
+        window.showTab = function(tabId) {
+            // Empêche l'accès aux onglets si non connecté
+            if (!is_authenticated && tabId !== 'login' && tabId !== 'register') {
+                showMessage("Veuillez vous connecter pour accéder au réseau.");
+                showAuthView('login');
+                return;
+            }
+            
+            // Masquer tous les onglets de contenu principal
+            document.querySelectorAll('.tab-content').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Activer l'onglet demandé
+            const targetTab = document.getElementById(`${tabId}-tab`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else if (tabId === 'login' || tabId === 'register') {
+                // Si c'est l'auth, on affiche juste l'overlay
+                showAuthView(tabId);
+                return;
+            } else {
+                showMessage(`L'onglet "${tabId}" n'est pas trouvé ou n'est pas encore implémenté.`, 'error');
+                return;
+            }
 
-    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); updateStats(); }
-    function load(){ const s = localStorage.getItem(STORAGE_KEY); if(s){ try{state=JSON.parse(s);}catch(e){console.warn('parse err',e)} } updateStats(); }
+            // Lancer l'action spécifique à l'onglet
+            if (tabId === 'feed') {
+                renderFeed();
+            } else if (tabId === 'profile' && currentUser) {
+                fetchUserProfile();
+            }
+        }
+        
+        /**
+         * Affiche la boîte de dialogue (overlay) d'authentification.
+         * @param {string} viewId - 'login' ou 'register'.
+         */
+        function showAuthView(viewId) {
+            // Masquer toutes les vues d'auth
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-register').style.display = 'none';
+            
+            // Afficher la vue demandée
+            const viewElement = document.getElementById(`view-${viewId}`);
+            if (viewElement) {
+                viewElement.style.display = 'block';
+            }
+            
+            // Afficher l'overlay et masquer le contenu principal
+            authOverlay.style.display = 'flex';
+            appWrap.style.display = 'none'; 
+        }
 
-    function updateStats(){ statPosts.textContent = state.posts.length; statFriends.textContent = state.friends.length; notifCount.textContent = state.notifications.length; }
+        /**
+         * Cache l'overlay d'authentification et affiche le contenu principal.
+         */
+        function hideAuthView() {
+            authOverlay.style.display = 'none';
+            appWrap.style.display = 'grid'; // Revient au layout grid principal
+        }
 
-    function formatTime(ts){ const d=new Date(ts); return d.toLocaleString(); }
 
-    // Render
-    function renderFeed(filter=""){ feedEl.innerHTML=''; let posts = state.posts.slice().sort((a,b)=>b.ts-a.ts);
-      if(filter) posts = posts.filter(p=>p.text.toLowerCase().includes(filter) || (p.author && p.author.toLowerCase().includes(filter)) );
-      if(posts.length===0){ document.getElementById('emptyFeed').style.display='block'; return } else document.getElementById('emptyFeed').style.display='none';
-      posts.forEach(p=>{ const el = document.createElement('article'); el.className='post'; el.innerHTML = `
-        <div class="meta"><div class="avatar">${p.authorInitials||'U'}</div>
-        <div><div class="name">${escapeHtml(p.authorName||state.me.name)} <span class="small muted">${p.authorHandle||state.me.handle} · ${formatTime(p.ts)}</span></div></div></div>
-        <div class="content">${linkify(escapeHtml(p.text))}</div>
-        <div class="actions small">
-          <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
-          <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
-          <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
-          <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
-        </div>
-        <div id="comments-${p.id}" style="margin-top:8px;display:none"></div>
-      `; feedEl.appendChild(el);
-      }); }
+        /**
+         * Met à jour l'état de l'application (UI, variables) après connexion/déconnexion.
+         */
+        function updateUI() {
+            const token = localStorage.getItem('token');
+            const userJson = localStorage.getItem('user');
 
-    // Helpers
-    function uid(){ return Math.random().toString(36).slice(2,9); }
-    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function linkify(s){ return s.replace(/(https?:\/\/[^\s]+)/g, '<a target="_blank" href="$1">$1</a>').replace(/#(\w+)/g,'<span class="pill">#$1</span>'); }
+            is_authenticated = !!token && !!userJson;
+            
+            if (is_authenticated) {
+                try {
+                    currentUser = JSON.parse(userJson);
+                    
+                    // Mise à jour des infos dans la colonne de gauche
+                    const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
+                    myNameEl.innerHTML = `<strong>${fullName || currentUser.username}</strong>`;
+                    myHandleEl.textContent = `@${currentUser.username} · Membre`;
+                    myAvatarEl.textContent = getInitials(fullName || currentUser.username);
 
-    // Actions
-    publishBtn.addEventListener('click', ()=>{
-      const text = composer.value.trim(); if(!text) return alert('Le message est vide.');
-      const p = {id:uid(),text,ts:Date.now(),likes:0,comments:[],authorName:state.me.name,authorHandle:state.me.handle,authorInitials:getInitials(state.me.name)};
-      state.posts.push(p); save(); renderFeed(); composer.value=''; notify('Votre post a été publié');
-    });
-    clearBtn.addEventListener('click', ()=>composer.value='');
+                    // Afficher les colonnes latérales et le wrap
+                    hideAuthView(); 
+                    leftColumn.style.display = 'block';
+                    document.getElementById('logoutBtn').style.display = 'inline-block';
+                    
+                    // On force l'affichage du fil d'actu après connexion
+                    showTab('feed');
 
-    function deletePost(id){ if(!confirm('Supprimer ce post ?')) return; state.posts = state.posts.filter(p=>p.id!==id); save(); renderFeed(); }
-    function toggleLike(id){ const p = state.posts.find(x=>x.id===id); if(!p) return; p.likes = (p.likes||0)+1; save(); renderFeed(); }
-    function openComments(id){ const cEl = document.getElementById('comments-'+id); if(!cEl) return; cEl.style.display = cEl.style.display==='none'?'block':'none'; if(cEl.innerHTML===''){ const p = state.posts.find(x=>x.id===id); cEl.innerHTML = renderCommentsSection(p); }
-    }
-    function renderCommentsSection(post){ return `
-      <div style="display:flex;gap:8px"><input id="cinput-${post.id}" style="flex:1;padding:8px;border-radius:8px;border:0;background:var(--glass)" placeholder="Écrire un commentaire..." />
-      <button class="btn" onclick='addComment("${post.id}")'>Envoyer</button></div>
-      <div style="margin-top:8px">${(post.comments||[]).map(c=>`<div class="small" style="padding:6px 0;border-top:1px dashed rgba(255,255,255,0.02)"><strong>${escapeHtml(c.author)}</strong> <span class="muted">· ${formatTime(c.ts)}</span><div>${escapeHtml(c.text)}</div></div>`).join('')}</div>
-    `}
-    function addComment(id){ const input = document.getElementById('cinput-'+id); if(!input) return; const text = input.value.trim(); if(!text) return; const post = state.posts.find(p=>p.id===id); post.comments = post.comments||[]; post.comments.push({id:uid(),author:state.me.name,text,ts:Date.now()}); save(); renderFeed(); notify('Commentaire ajouté'); }
+                } catch (e) {
+                    console.error("Erreur parsing user:", e);
+                    logout(); // Problème de données, on déconnecte
+                }
+            } else {
+                currentUser = null;
+                
+                // Afficher l'overlay de connexion/inscription
+                showAuthView('login');
+                
+                // Masquer le contenu principal
+                myNameEl.innerHTML = `<strong>Utilisateur Demo</strong>`;
+                myHandleEl.textContent = `@demo · Déconnecté`;
+                myAvatarEl.textContent = 'U?';
+                leftColumn.style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'none';
+            }
+        }
+        
+        // ====================================================================
+        // LOGIQUE D'AUTHENTIFICATION (Inscription / Connexion / Déconnexion)
+        // ====================================================================
 
-    function sharePost(id){ const url = new URL(location.href); url.hash = 'post-'+id; navigator.clipboard?.writeText(url.toString()).then(()=>notify('Lien copié')); }
+        /**
+         * Gestionnaire de soumission du formulaire d'inscription.
+         */
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const data = {
+                first_name: form['register-first-name'].value, 
+                last_name: form['register-last-name'].value,   
+                username: form['register-username'].value,
+                email: form['register-email'].value,
+                password: form['register-password'].value
+            };
 
-    function notify(msg){ state.notifications.push({id:uid(),text:msg,ts:Date.now()}); save(); }
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-    // Suggestions & friends
-    function renderSuggestions(){ suggestionsEl.innerHTML=''; const pool = ['Alice','Bob','Carole','Denis','Eva','Franck']; pool.forEach(name=>{ const id = name.toLowerCase(); const row = document.createElement('div'); row.className='follow-row'; row.innerHTML = `<div><strong>${name}</strong><div class="muted">@${id}</div></div><div><button class="btn" onclick='follow("${name}")'>Suivre</button></div>`; suggestionsEl.appendChild(row); }); }
-    function follow(name){ if(state.friends.includes(name)){ alert('Déjà suivi'); return } state.friends.push(name); save(); renderSuggestions(); notify('Nouvel ami: '+name); }
+                const result = await response.json();
 
-    // Seed sample posts
-    function seedSample(){ const samples = [
-      {text:'Bienvenue sur MiniRéseau ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},
-      {text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},
-      {text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}
-    ]; samples.forEach(s=>{ state.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
+                if (response.ok) {
+                    showMessage('Inscription réussie. Veuillez vous connecter.', 'success');
+                    form.reset();
+                    showAuthView('login');
+                } else {
+                    showMessage(result.error || 'Erreur lors de l\'inscription. Veuillez réessayer.');
+                }
+            } catch (error) {
+                console.error('Erreur réseau lors de l\'inscription:', error);
+                showMessage('Connexion au serveur impossible.');
+            }
+        }
 
-    function clearAll(){ if(!confirm('Tout réinitialiser (stockage local) ?')) return; localStorage.removeItem(STORAGE_KEY); state={me:state.me,posts:[],friends:[],notifications:[]}; save(); renderFeed(); }
+        /**
+         * Gestionnaire de soumission du formulaire de connexion.
+         */
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const data = {
+                email: form['login-email'].value,
+                password: form['login-password'].value
+            };
 
-    // Utilities
-    function getInitials(name){ return name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase(); }
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-    // Search
-    document.getElementById('searchInput').addEventListener('input', (e)=>{ renderFeed(e.target.value.toLowerCase()); });
+                const result = await response.json();
 
-    // Notifications simulation
-    setInterval(()=>{
-      if(Math.random()>0.8){ const msg = ['Quelqu\'un a aimé votre post','Nouvelle suggestion d\'ami','Nouveau message privé'][Math.floor(Math.random()*3)]; notify(msg); updateNotifUI(); }
-    },60000);
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    form.reset();
+                    showMessage(`Bienvenue, ${result.user.first_name || result.user.username} !`, 'success');
+                    updateUI(); // Met à jour l'UI et affiche le fil d'actu
+                } else {
+                    showMessage(result.error || 'Erreur de connexion. Email ou mot de passe incorrect.');
+                }
+            } catch (error) {
+                console.error('Erreur réseau lors de la connexion:', error);
+                showMessage('Connexion au serveur impossible.');
+            }
+        }
 
-    function updateNotifUI(){ notifCount.textContent = state.notifications.length; }
+        /**
+         * Déconnexion de l'utilisateur.
+         */
+        window.logout = function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            showMessage('Déconnecté avec succès.', 'success');
+            updateUI(); // Retourne à la vue de connexion
+        }
+        
+        // ====================================================================
+        // GESTION DU PROFIL UTILISATEUR (API)
+        // ====================================================================
 
-    // On load
-    load(); renderSuggestions(); renderFeed(); updateNotifUI();
+        /**
+         * Récupère le profil de l'utilisateur connecté via l'API /api/users/me.
+         */
+        async function fetchUserProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
 
-    // Expose for buttons in HTML inline handlers
-    window.seedSample = seedSample; window.clearAll = clearAll;window.showTab = function(t){
-  if (t === 'messages') {
-    window.location.href = "messages.html";  
-    return;
-  }
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/me`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-  alert("Onglet : " + t + " (en construction)");
-};
+                const result = await response.json();
 
-    window.toggleLike = toggleLike; window.openComments = openComments; window.addComment = addComment; window.sharePost = sharePost; window.deletePost = deletePost; window.follow = follow; window.getInitials = getInitials;
-  </script>
+                if (response.ok) {
+                    displayUserProfile(result.user);
+                } else {
+                    // Si le token est expiré, on déconnecte l'utilisateur
+                    if (response.status === 401) {
+                         showMessage("Session expirée. Veuillez vous reconnecter.", 'error');
+                         logout();
+                    } else {
+                         showMessage(result.error || 'Erreur lors de la récupération du profil.', 'error');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erreur réseau lors de la récupération du profil:', error);
+                showMessage('Impossible de contacter le serveur de profil.');
+            }
+        }
+
+        /**
+         * Met à jour le contenu de la vue profil.
+         * @param {object} user - Les données du profil utilisateur complètes.
+         */
+        function displayUserProfile(user) {
+            const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            document.getElementById('profile-full-name').textContent = fullName;
+            document.getElementById('profile-username').textContent = user.username;
+            document.getElementById('profile-email').textContent = user.email;
+            document.getElementById('profile-avatar').textContent = getInitials(fullName || user.username);
+            
+            // Formatage de la date de création
+            const date = new Date(user.created_at);
+            document.getElementById('profile-created-at').textContent = date.toLocaleDateString('fr-FR', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+        }
+        
+        // ====================================================================
+        // UTILITAIRES DE GESTION DU STOCKAGE LOCAL (pour les posts/amis)
+        // ====================================================================
+        
+        // IMPORTANT : Ces fonctions utilisent encore localStorage pour simuler les posts et amis.
+        // Elles devront être remplacées par des appels API pour une vraie persistance.
+
+        function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(localState)); updateStats(); }
+        function load(){ const s = localStorage.getItem(STORAGE_KEY); if(s){ try{localState=JSON.parse(s);}catch(e){console.warn(e)} } updateStats(); }
+        function updateStats(){ 
+            document.getElementById('statPosts').textContent = localState.posts.length; 
+            document.getElementById('statFriends').textContent = localState.friends.length; 
+            document.getElementById('notifCount').textContent = localState.notifications.length; 
+        }
+        function uid(){ return Math.random().toString(36).slice(2,9); }
+        function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function linkify(s){ return s.replace(/(https?:\/\/[^\s]+)/g,'<a target="_blank" href="$1">$1</a>').replace(/#(\w+)/g,'<span class="pill">#$1</span>'); }
+        function getInitials(name){ return name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() || 'U'; }
+
+
+        // Reste du code pour le feed et les actions (maintenu pour ne pas casser la timeline locale)
+        // ====================================================================
+        const feedEl = document.getElementById('feed');
+        const composer = document.getElementById('composer');
+        const publishBtn = document.getElementById('publishBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const suggestionsEl = document.getElementById('suggestions');
+
+        function renderFeed(filter=""){ 
+            feedEl.innerHTML='';
+            let posts = localState.posts.slice().sort((a,b)=>b.ts-a.ts);
+            if(filter) posts = posts.filter(p=>p.text.toLowerCase().includes(filter) || (p.authorName && p.authorName.toLowerCase().includes(filter)));
+            if(posts.length===0){ document.getElementById('emptyFeed').style.display='block'; return } else document.getElementById('emptyFeed').style.display='none';
+            posts.forEach(p=>{
+                const el = document.createElement('article'); el.className='post';
+                el.innerHTML = `
+                    <div class="meta"><div class="avatar">${p.authorInitials||'U'}</div>
+                    <div><div class="name">${escapeHtml(p.authorName||(currentUser?.first_name ? currentUser.first_name + ' ' + currentUser.last_name : currentUser?.username || 'Demo'))} <span class="small muted">${p.authorHandle||(currentUser?.username ? '@'+currentUser.username : '@demo')} · ${new Date(p.ts).toLocaleString()}</span></div></div></div>
+                    <div class="content">${linkify(escapeHtml(p.text))}</div>
+                    <div class="actions small">
+                        <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
+                        <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
+                        <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
+                        <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
+                    </div>
+                    <div id="comments-${p.id}" style="margin-top:8px;display:none"></div>
+                `;
+                feedEl.appendChild(el);
+            });
+        }
+        
+        publishBtn.addEventListener('click', ()=>{
+            if (!is_authenticated) return showAuthView('login');
+
+            const text = composer.value.trim(); if(!text) return showMessage('Le message est vide.');
+            
+            const authorName = `${currentUser.first_name} ${currentUser.last_name}`.trim() || currentUser.username;
+            const p = {
+                id: uid(),
+                text,
+                ts: Date.now(),
+                likes: 0,
+                comments: [],
+                authorName: authorName,
+                authorHandle: `@${currentUser.username}`,
+                authorInitials: getInitials(authorName)
+            };
+            localState.posts.push(p); save(); renderFeed(); composer.value=''; showMessage('Votre post a été publié', 'success');
+        });
+        clearBtn.addEventListener('click', ()=>composer.value='');
+
+        function deletePost(id){ if(!confirm('Supprimer ce post ?')) return; localState.posts = localState.posts.filter(p=>p.id!==id); save(); renderFeed(); }
+        function toggleLike(id){ const p=localState.posts.find(x=>x.id===id); if(!p) return; p.likes=(p.likes||0)+1; save(); renderFeed(); }
+        function openComments(id){ const cEl=document.getElementById('comments-'+id); if(!cEl) return; cEl.style.display=cEl.style.display==='none'?'block':'none'; if(cEl.innerHTML===''){ const p=localState.posts.find(x=>x.id===id); cEl.innerHTML=renderCommentsSection(p); } }
+        function renderCommentsSection(post){ return `<div style="display:flex;gap:8px"><input id="cinput-${post.id}" style="flex:1;padding:8px;border-radius:8px;border:0;background:var(--glass)" placeholder="Écrire un commentaire..." /><button class="btn" onclick='addComment("${post.id}")'>Envoyer</button></div><div style="margin-top:8px">${(post.comments||[]).map(c=>`<div class="small" style="padding:6px 0;border-top:1px dashed rgba(255,255,255,0.02)"><strong>${escapeHtml(c.author)}</strong> <span class="muted">· ${new Date(c.ts).toLocaleString()}</span><div>${escapeHtml(c.text)}</div></div>`).join('')}</div>` }
+        function addComment(id){ if (!is_authenticated) return showAuthView('login'); const input=document.getElementById('cinput-'+id); if(!input) return; const text=input.value.trim(); if(!text) return; const post=localState.posts.find(p=>p.id===id); const authorName = `${currentUser.first_name} ${currentUser.last_name}`.trim() || currentUser.username; post.comments=post.comments||[]; post.comments.push({id:uid(),author:authorName,text,ts:Date.now()}); save(); renderFeed(); showMessage('Commentaire ajouté', 'success'); }
+        function sharePost(id){ const url=new URL(location.href); url.hash='post-'+id; navigator.clipboard?.writeText(url.toString()).then(()=>showMessage('Lien copié', 'success')); }
+        function notify(msg){ localState.notifications.push({id:uid(),text:msg,ts:Date.now()}); save(); }
+        
+        function renderSuggestions(){ 
+            suggestionsEl.innerHTML='';
+            const pool=['Alice','Bob','Carole','Denis','Eva','Franck'];
+            pool.forEach(name=>{
+                const id=name.toLowerCase();
+                const row=document.createElement('div');
+                row.className='follow-row';
+                row.innerHTML=`<div><strong>${name}</strong><div class="muted">@${id}</div></div><div><button class="btn" onclick='follow("${name}")'>Suivre</button></div>`;
+                suggestionsEl.appendChild(row);
+            });
+        }
+        function follow(name){ if (!is_authenticated) return showAuthView('login'); if(localState.friends.includes(name)){ showMessage('Déjà suivi'); return } localState.friends.push(name); save(); renderSuggestions(); showMessage('Nouvel ami: '+name, 'success'); }
+        function seedSample(){ const samples=[{text:'Bienvenue sur MiniRéseau ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},{text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},{text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}]; samples.forEach(s=>{ localState.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
+        function clearAll(){ if(!confirm('Tout réinitialiser (stockage local des posts/amis) ?')) return; localStorage.removeItem(STORAGE_KEY); localState={posts:[],friends:[],notifications:[]}; save(); renderFeed(); }
+
+        document.getElementById('searchInput').addEventListener('input',(e)=>{ renderFeed(e.target.value.toLowerCase()); });
+
+
+        // =======================
+        // INITIALISATION
+        // =======================
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Charger l'état local (posts, amis, etc.)
+            load();
+            renderSuggestions();
+            renderFeed();
+            
+            // 2. Attacher les gestionnaires d'événements API
+            document.getElementById('register-form').addEventListener('submit', handleRegister);
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+
+            // 3. Vérifier l'état de l'authentification et mettre à jour l'UI
+            updateUI();
+        });
+    </script>
 </body>
 </html>
