@@ -8,7 +8,10 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users'); 
 const postRoutes = require('./routes/posts');
-const messageRoutes = require('./routes/messages');
+const messageRoutes = require('./routes/message');
+const friendsRoutes = require('./routes/ami');
+
+
 const app = express();
 const port = 3000;
 
@@ -20,7 +23,9 @@ app.use(bodyParser.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/messages', messageRoutes); // ➕ AJOUT
+app.use('/api/messages', messageRoutes);
+app.use('/api/ami', friendsRoutes);
+ // ➕ AJOUT
 
 
 // Servir le frontend (HTML/CSS/JS)
