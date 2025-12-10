@@ -1,11 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
+const amiController = require('../controllers/amiController');
 
-const friendsController = require('../controllers/amiController');
+// Routes publiques (récupérer tous les utilisateurs)
+router.get('/', protect, amiController.getAllUsers);
 
-router.get('/', friendsController.getAllUsers);
-router.post('/add', friendsController.sendFriendRequest);
-router.post('/accept', friendsController.acceptFriendRequest);
-router.post('/remove', friendsController.removeFriend);
+// Routes protégées (demandes, amis, groupes)
+router.get('/friends', protect, amiController.getMyFriends);
+router.get('/requests', protect, amiController.getFriendRequests);
+router.get('/groups', protect, amiController.getMyGroups);
+
+// Actions sur les amis
+router.post('/add', protect, amiController.addFriend);
+router.post('/accept', protect, amiController.acceptRequest);
+router.post('/reject', protect, amiController.rejectRequest);
+router.post('/remove', protect, amiController.removeFriend);
+
+// Groupes
+router.post('/groups/create', protect, amiController.createGroup);
 
 module.exports = router;

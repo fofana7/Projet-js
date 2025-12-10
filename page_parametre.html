@@ -1,14 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paramètres - RevoSocial</title>
+  <title>Paramètres - Unity</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #fafafa;
+      background: #accfdb;
       display: flex;
     }
 
@@ -144,6 +145,211 @@
       cursor: pointer;
       margin-top: 20px;
     }
+
+    /* LISTE BLOQUÉS */
+    .blocked-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .blocked-user {
+      background: #f7f7f7;
+      padding: 15px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .blocked-pic {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .blocked-name {
+      flex: 1;
+      margin-left: 18px;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .unblock-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    .unblock-btn:hover {
+      background: #e03b3b;
+    }
+
+    /* Informations personnelles lecture seule */
+    #personal-section ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    #personal-section ul li {
+      background: #f7f7f7;
+      margin-bottom: 12px;
+      padding: 12px 15px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      font-size: 16px;
+    }
+
+      /* MOT DE PASSE & SÉCURITÉ */
+.security-box {
+  background: #f7f7f7;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.security-box label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+  font-size: 16px;
+}
+
+.security-box input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  background: #fff;
+  transition: border 0.2s;
+}
+
+.security-box input:focus {
+  border-color: #4a55ff;
+  outline: none;
+}
+
+#password-strength {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+#confirm-message {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+#update-password-btn {
+  background: #4a55ff;
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#update-password-btn:hover {
+  background: #3b44d1;
+}
+
+
+ /* CONFIDENTIALITÉ */
+.privacy-box {
+  background: #f7f7f7;
+  padding: 25px 30px;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.privacy-box h2 {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #4a55ff;
+}
+
+.privacy-box p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+
+/* DÉCONNEXION */
+.logout-box {
+  background: #f7f7f7;
+  padding: 25px 30px;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.logout-box p {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.logout-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.logout-btn:hover {
+  background: #e03b3b;
+}
+
+/* SECTION Télécharger vos données */
+#data-section {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+#data-section h1 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+#data-section p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+#download-data-btn {
+  background: #4a55ff;
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#download-data-btn:hover {
+  background: #3b44d1;
+}
+
+
   </style>
 </head>
 <body>
@@ -165,99 +371,214 @@
 
     <div class="menu-section">
       <div class="menu-title">Espace Comptes</div>
-      <div class="menu-item">Informations personnelles</div>
-      <div class="menu-item">Mot de passe et sécurité</div>
-      <div class="menu-item">Préférences publicitaires</div>
+      <div class="menu-item" id="menu-personal">Informations personnelles</div>
+      <div class="menu-item" id="menu-security">Mot de passe et sécurité</div>
+      <div class="menu-item" id="menu-logout">Supprimer le compte</div>
+
     </div>
 
     <div class="menu-section">
-      <div class="menu-title">Comment vous utilisez RevoSocial</div>
-      <div class="menu-item">Modifier le profil</div>
-      <div class="menu-item">Notifications</div>
+      <div class="menu-title">Comment vous utilisez Unity</div>
+      <div class="menu-item" id="menu-profile">Modifier le profil</div>
+      <div class="menu-item" id="menu-data">Télécharger vos données</div>
     </div>
 
     <div class="menu-section">
       <div class="menu-title">Confidentialité</div>
-      <div class="menu-item">Qui peut voir votre contenu</div>
-      <div class="menu-item">Comptes bloqués</div>
+      <div class="menu-item" id="menu-blocked">Comptes bloqués</div>
+      <div class="menu-item" id="menu-confidentialite">Politique de confidentialité</div>
     </div>
   </div>
 
   <!-- RIGHT SECTION -->
   <div class="content">
-    <h1>Modifier le profil</h1>
+    <!-- SECTION Modifier le profil -->
+    <div class="section" id="profile-section">
+      <h1>Modifier le profil</h1>
 
-    <div class="profile-box">
-      <div style="display:flex; align-items:center; gap:20px;">
-        <img class="profile-pic-small" src="https://i.pravatar.cc/200" />
-        <strong>Nom Utilisateur</strong>
+      <div class="profile-box">
+        <div style="display:flex; align-items:center; gap:20px;">
+          <img class="profile-pic-small" src="https://i.pravatar.cc/200" />
+          <strong>Nom Utilisateur</strong>
+        </div>
+        <button class="btn-edit-photo">Modifier la photo</button>
       </div>
-      <button class="btn-edit-photo">Modifier la photo</button>
+
+      <div class="field">
+        <label>Site Web</label>
+        <input type="text" placeholder="Votre site..." />
+      </div>
+
+      <div class="field">
+        <label>Bio</label>
+        <textarea rows="3" placeholder="Votre bio..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Genre</label>
+        <select>
+          <option>Homme</option>
+          <option>Femme</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Date de naissance</label>
+        <input type="date" />
+      </div>
+
+      <div class="field">
+        <label>Classe</label>
+        <select>
+          <option>Sup</option>
+          <option>Sp2</option>
+          <option>Ingé1</option>
+          <option>Ingé2</option>
+          <option>Ingé3</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Localisation</label>
+        <input type="text" placeholder="Ville, pays" />
+      </div>
+
+      <div class="field">
+        <label>Thème</label>
+        <select>
+          <option>Mode clair</option>
+          <option>Mode sombre</option>
+          <option>Automatique</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Langue</label>
+        <select>
+          <option>Français</option>
+          <option>Anglais</option>
+          <option>Espagnol</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Notifications par email</label>
+        <select>
+          <option>Important uniquement</option>
+          <option>Toutes</option>
+          <option>Aucune</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Notifications push</label>
+        <select>
+          <option>Toutes</option>
+          <option>Seulement les messages</option>
+          <option>Désactivées</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Compte vérifié</label>
+        <select>
+          <option>Non vérifié</option>
+          <option>Demander la vérification</option>
+        </select>
+      </div>
+
+      <button class="save-btn">Enregistrer</button>
     </div>
 
-    <div class="field">
-      <label>Site Web</label>
-      <input type="text" placeholder="Votre site..." />
+<!-- Le reste du code reste inchangé (sections sécurité, bloqués, confidentialité, notifications, supprimer compte, télécharger données, infos personnelles) -->
+
+<!-- SECTION Mot de passe et sécurité -->
+<div class="section" id="security-section" style="display:none;">
+  <h1>Mot de passe et sécurité</h1>
+
+  <div class="security-box">
+    <label>Mot de passe actuel :</label>
+    <input type="password" id="current-password" placeholder="Entrez votre mot de passe actuel">
+  </div>
+
+  <div class="security-box">
+    <label>Nouveau mot de passe :</label>
+    <input type="password" id="new-password" placeholder="Entrez votre nouveau mot de passe">
+    <small id="password-strength" style="display:block; margin-top:5px;">Force du mot de passe : </small>
+  </div>
+
+  <div class="security-box">
+    <label>Confirmer le mot de passe :</label>
+    <input type="password" id="confirm-password" placeholder="Confirmez votre nouveau mot de passe">
+    <small id="confirm-message" style="display:block; margin-top:5px; color:red;"></small>
+  </div>
+
+  <button class="save-btn" id="update-password-btn">Mettre à jour le mot de passe</button>
+</div>
+
+<!-- SECTION Comptes bloqués -->
+<div class="section" id="blocked-section" style="display:none;">
+  <h1>Comptes bloqués</h1>
+  <p>Voici les personnes que vous avez bloquées :</p>
+
+  <div class="blocked-list">
+    <div class="blocked-user">
+      <img src="https://i.pravatar.cc/150?img=11" class="blocked-pic">
+      <span class="blocked-name">Utilisateur1</span>
+      <button class="unblock-btn">Débloquer</button>
     </div>
 
-    <div class="field">
-      <label>Bio</label>
-      <textarea rows="3" placeholder="Votre bio..."></textarea>
+    <div class="blocked-user">
+      <img src="https://i.pravatar.cc/150?img=12" class="blocked-pic">
+      <span class="blocked-name">Utilisateur2</span>
+      <button class="unblock-btn">Débloquer</button>
     </div>
 
-    <div class="field">
-      <label>Genre</label>
-      <select>
-        <option>Homme</option>
-        <option>Femme</option>
-        <option>Autre</option>
-      </select>
+    <div class="blocked-user">
+      <img src="https://i.pravatar.cc/150?img=13" class="blocked-pic">
+      <span class="blocked-name">Utilisateur3</span>
+      <button class="unblock-btn">Débloquer</button>
     </div>
+  </div>
+</div>
 
-    <button class="save-btn">Enregistrer</button>
+<!-- SECTION Confidentialité / Politique de confidentialité -->
+<div class="section" id="privacy-section" style="display:none;">
+  <h1>Politique de confidentialité</h1>
+  <div class="privacy-box">
+    <p>
+      Votre vie privée est importante pour nous. Cette politique explique comment nous collectons, utilisons et protégeons vos informations personnelles sur RevoSocial.
+    </p>
+    <h2>1. Informations collectées</h2>
+    <p>
+      Nous collectons les informations que vous fournissez lors de l'inscription, telles que votre nom, email, numéro de téléphone, ainsi que les informations que vous publiez sur le réseau social.
+    </p>
+    <h2>2. Utilisation des informations</h2>
+    <p>
+      Vos données sont utilisées pour améliorer votre expérience sur RevoSocial, personnaliser le contenu, vous envoyer des notifications et sécuriser votre compte.
+    </p>
+    <h2>3. Partage des informations</h2>
+    <p>
+      Nous ne partageons vos informations personnelles avec des tiers que dans les cas nécessaires à la fourniture du service ou si la loi l’exige.
+    </p>
+    <h2>4. Sécurité des données</h2>
+    <p>
+      Nous mettons en place des mesures de sécurité pour protéger vos informations contre l'accès non autorisé, la modification ou la divulgation.
+    </p>
+    <h2>5. Vos droits</h2>
+    <p>
+      Vous pouvez accéder à vos informations, les modifier ou demander leur suppression. Vous pouvez également gérer vos préférences de confidentialité dans les paramètres.
+    </p>
+  </div>
+</div>
 
+<!-- SECTION Notifications -->
+<div class="section" id="notifications-section" style="display:none;">
+  <h1>Notifications</h1>
+  <div class="notifications-box">
     <div class="field">
-      <label>Date de naissance</label>
-      <input type="date" />
-    </div>
-
-    <!-- MENU DEROULANT POUR CLASSE -->
-    <div class="field">
-      <label>Classe</label>
-      <select>
-        <option>Sup</option>
-        <option>Sp2</option>
-        <option>Ingé1</option>
-        <option>Ingé2</option>
-        <option>Ingé3</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Localisation</label>
-      <input type="text" placeholder="Ville, pays" />
-    </div>
-
-    <div class="field">
-      <label>Thème</label>
-      <select>
-        <option>Mode clair</option>
-        <option>Mode sombre</option>
-        <option>Automatique</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Langue</label>
-      <select>
-        <option>Français</option>
-        <option>Anglais</option>
-        <option>Espagnol</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Notifications par email</label>
+      <label>Notifications par email :</label>
       <select>
         <option>Important uniquement</option>
         <option>Toutes</option>
@@ -266,7 +587,7 @@
     </div>
 
     <div class="field">
-      <label>Notifications push</label>
+      <label>Notifications push :</label>
       <select>
         <option>Toutes</option>
         <option>Seulement les messages</option>
@@ -274,19 +595,233 @@
       </select>
     </div>
 
-    <div class="field">
-      <label>Compte vérifié</label>
-      <select>
-        <option>Non vérifié</option>
-        <option>Demander la vérification</option>
-      </select>
-    </div>
-
-    <button class="save-btn">Enregistrer</button>
-
+    <button class="save-btn" id="save-notifications-btn">Enregistrer les préférences</button>
   </div>
+</div>
+
+<!-- SECTION supprimer le compte -->
+<div class="section" id="logout-section" style="display:none;">
+  <h1>Supprimer le compte</h1>
+  <div class="logout-box">
+    <p>
+      Cliquez sur le bouton ci-dessous pour procéder à la suppression de votre compte.
+    </p>
+    <button class="logout-btn" id="logout-btn">Supprimer</button>
+  </div>
+</div>
+
+<!-- SECTION Télécharger vos données -->
+<div class="section" id="data-section" style="display:none;">
+  <h1>Télécharger vos données</h1>
+  <p>
+    Vous pouvez télécharger une copie de toutes les informations que nous avons sur votre compte Unity.
+  </p>
+  <button class="save-btn" id="download-data-btn">Télécharger mes données</button>
+</div>
+
+<!-- SECTION Informations personnelles lecture seule -->
+<div class="section" id="personal-section" style="display:none;">
+  <h1>Informations personnelles</h1>
+  <ul>
+    <li><strong>Nom complet :</strong> John Doe</li>
+    <li><strong>Email :</strong> john.doe@example.com</li>
+    <li><strong>Numéro de téléphone :</strong> +33 6 12 34 56 78</li>
+    <li><strong>Adresse :</strong> 123 Rue Exemple, Paris, France</li>
+    <li><strong>Date de naissance :</strong> 01/01/1990</li>
+    <li><strong>Genre :</strong> Homme</li>
+    <li><strong>Classe :</strong> Ingé2</li>
+    <li><strong>Localisation :</strong> Paris, France</li>
+  </ul>
+</div>
 
 </div>
+
+</div>
+
+<script>
+  // ========== NAVIGATION SIDEBAR ==========
+  document.querySelectorAll('.sidebar-icon').forEach((icon, index) => {
+    icon.addEventListener('click', () => {
+      if(index === 0) { // 🏠 Accueil
+        window.location.href = 'index.html';
+      } else if(index === 5) { // 👤 Paramètres (refresh)
+        location.reload();
+      }
+    });
+  });
+
+  // ========== NAVIGATION MENU ==========
+  const menuMap = {
+    'menu-profile': 'profile-section',
+    'menu-personal': 'personal-section',
+    'menu-security': 'security-section',
+    'menu-blocked': 'blocked-section',
+    'menu-confidentialite': 'privacy-section',
+    'menu-logout': 'logout-section',
+    'menu-data': 'data-section'
+  };
+
+  // Afficher la première section par défaut
+  document.getElementById('profile-section').style.display = 'block';
+
+  // Fonction pour cacher toutes les sections
+  function hideAllSections() {
+    Object.values(menuMap).forEach(sectionId => {
+      const section = document.getElementById(sectionId);
+      if(section) section.style.display = 'none';
+    });
+  }
+
+  // Ajouter les event listeners pour le menu
+  Object.keys(menuMap).forEach(menuId => {
+    const menuItem = document.getElementById(menuId);
+    if(menuItem) {
+      menuItem.addEventListener('click', () => {
+        hideAllSections();
+        const sectionId = menuMap[menuId];
+        const section = document.getElementById(sectionId);
+        if(section) section.style.display = 'block';
+      });
+    }
+  });
+
+  // ========== MOT DE PASSE ==========
+  const newPasswordInput = document.getElementById('new-password');
+  const confirmPasswordInput = document.getElementById('confirm-password');
+  const passwordStrength = document.getElementById('password-strength');
+  const confirmMessage = document.getElementById('confirm-message');
+  const updateBtn = document.getElementById('update-password-btn');
+  const currentPasswordInput = document.getElementById('current-password');
+
+  if(newPasswordInput) {
+    newPasswordInput.addEventListener('input', () => {
+      const pwd = newPasswordInput.value;
+      let strength = 'Faible';
+      let color = 'red';
+
+      const lengthScore = pwd.length >= 8 ? 1 : 0;
+      const upperScore = /[A-Z]/.test(pwd) ? 1 : 0;
+      const numberScore = /[0-9]/.test(pwd) ? 1 : 0;
+      const specialScore = /[\W]/.test(pwd) ? 1 : 0;
+
+      const totalScore = lengthScore + upperScore + numberScore + specialScore;
+
+      if(totalScore === 4) {
+        strength = 'Très fort';
+        color = 'green';
+      } else if(totalScore === 3) {
+        strength = 'Fort';
+        color = 'blue';
+      } else if(totalScore === 2) {
+        strength = 'Moyen';
+        color = 'orange';
+      }
+
+      if(passwordStrength) {
+        passwordStrength.textContent = `Force du mot de passe : ${strength}`;
+        passwordStrength.style.color = color;
+      }
+    });
+  }
+
+  if(confirmPasswordInput && newPasswordInput) {
+    confirmPasswordInput.addEventListener('input', () => {
+      if(confirmPasswordInput.value !== newPasswordInput.value && confirmPasswordInput.value.length > 0){
+        if(confirmMessage) confirmMessage.textContent = "❌ Les mots de passe ne correspondent pas.";
+      } else if(confirmPasswordInput.value === newPasswordInput.value && confirmPasswordInput.value.length > 0) {
+        if(confirmMessage) confirmMessage.textContent = "✓ Les mots de passe correspondent.";
+      } else {
+        if(confirmMessage) confirmMessage.textContent = "";
+      }
+    });
+  }
+
+  if(updateBtn) {
+    updateBtn.addEventListener('click', () => {
+      const currentPwd = currentPasswordInput ? currentPasswordInput.value : '';
+      const newPwd = newPasswordInput ? newPasswordInput.value : '';
+      const confirmPwd = confirmPasswordInput ? confirmPasswordInput.value : '';
+
+      if(!currentPwd || !newPwd || !confirmPwd){
+        alert("Veuillez remplir tous les champs.");
+        return;
+      }
+
+      if(newPwd !== confirmPwd){
+        alert("Les mots de passe ne correspondent pas.");
+        return;
+      }
+
+      alert("Mot de passe mis à jour avec succès !");
+      if(currentPasswordInput) currentPasswordInput.value = '';
+      if(newPasswordInput) newPasswordInput.value = '';
+      if(confirmPasswordInput) confirmPasswordInput.value = '';
+      if(confirmMessage) confirmMessage.textContent = '';
+      if(passwordStrength) {
+        passwordStrength.textContent = 'Force du mot de passe : Faible';
+        passwordStrength.style.color = 'red';
+      }
+    });
+  }
+
+  // ========== SUPPRIMER LE COMPTE ==========
+  const logoutBtn = document.getElementById('logout-btn');
+  if(logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      if(confirm('Êtes-vous absolument sûr ? Cette action est irréversible.')) {
+        alert("Votre compte a bien été supprimé. A bientôt !");
+        window.location.href = 'login.html';
+      }
+    });
+  }
+
+  // ========== TÉLÉCHARGER LES DONNÉES ==========
+  const downloadBtn = document.getElementById('download-data-btn');
+  if(downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      const userData = {
+        nom: "John Doe",
+        email: "john.doe@example.com",
+        dateNaissance: "1990-01-01",
+        localisation: "Paris, France",
+        bio: "Ma bio...",
+        dateExport: new Date().toISOString()
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "mes_donnees_unity.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+  }
+
+  // ========== BOUTONS DE SAUVEGARDE (Enregistrer) ==========
+  const saveBtns = document.querySelectorAll('.save-btn');
+  saveBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // Vérifier que ce n'est pas le bouton de mise à jour du mot de passe
+      if(btn.id !== 'update-password-btn') {
+        alert("Vos modifications ont été enregistrées avec succès !");
+      }
+    });
+  });
+
+  // ========== BOUTONS DÉBLOQUER ==========
+  const unblockBtns = document.querySelectorAll('.unblock-btn');
+  unblockBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userName = btn.parentElement.querySelector('.blocked-name').textContent;
+      if(confirm(`Êtes-vous sûr de vouloir débloquer ${userName} ?`)) {
+        alert(`${userName} a été débloqué avec succès !`);
+        btn.parentElement.remove();
+      }
+    });
+  });
+
+</script>
 
 </body>
 </html>

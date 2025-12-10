@@ -1,160 +1,581 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Amis</title>
-<style>
-    body {
-        margin: 0;
-        font-family: Arial;
-        display: flex;
-        height: 100vh;
-    }
-
-    #users, #requests, #friends {
-        flex: 1;
-        border-right: 2px solid #ddd;
-        padding: 20px;
-        overflow-y: auto;
-    }
-
-    .user-card {
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-    }
-
-    button {
-        padding: 5px 10px;
-        margin-top: 8px;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Réseau — Amis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #0a0f1f 0%, #1a1f3a 100%); 
+            color: #f1f5f9; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            min-height: 100vh; 
+        }
+        .header { 
+            background: rgba(15, 23, 42, 0.95); 
+            padding: 20px 30px; 
+            border-bottom: 1px solid #334155; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            background-clip: text; 
+        }
+        .container { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 20px; 
+            padding: 20px 30px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+        .section { 
+            background: #1e293b; 
+            border-radius: 15px; 
+            border: 1px solid #334155; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .section-title { 
+            font-size: 20px; 
+            font-weight: 700; 
+            margin-bottom: 20px; 
+            color: #f1f5f9;
+        }
+        .search-box { 
+            width: 100%; 
+            padding: 12px; 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            color: #f1f5f9; 
+            margin-bottom: 15px; 
+            font-size: 14px; 
+        }
+        .search-box:focus { 
+            outline: none; 
+            border-color: #6366f1; 
+            background: rgba(99, 102, 241, 0.1); 
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box { 
+            background: rgba(99, 102, 241, 0.1); 
+            border: 1px solid #334155; 
+            padding: 20px; 
+            border-radius: 10px; 
+            text-align: center; 
+        }
+        .stat-value { 
+            font-size: 36px; 
+            font-weight: 700; 
+            color: #6366f1; 
+        }
+        .stat-label { 
+            font-size: 14px; 
+            color: #94a3b8; 
+            margin-top: 8px; 
+        }
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .user-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(99, 102, 241, 0.3); 
+            border-radius: 12px; 
+            padding: 16px; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.3s; 
+            min-height: 200px;
+            justify-content: space-between;
+        }
+        .user-card:hover { 
+            background: rgba(99, 102, 241, 0.15); 
+            border-color: #6366f1; 
+            transform: translateY(-4px);
+        }
+        .avatar { 
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #6366f1, #ec4899); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700; 
+            color: white; 
+            font-size: 20px; 
+            margin-bottom: 12px;
+        }
+        .user-info { 
+            flex: 1; 
+        }
+        .user-name { 
+            font-weight: 600; 
+            margin-bottom: 4px; 
+            font-size: 16px;
+        }
+        .user-email { 
+            font-size: 12px; 
+            color: #94a3b8; 
+            margin-bottom: 8px;
+        }
+        .user-status { 
+            font-size: 12px; 
+            color: #10b981;
+            margin-bottom: 12px;
+        }
+        .btn { 
+            padding: 10px 16px; 
+            border: 1px solid #334155; 
+            background: transparent; 
+            color: #f1f5f9; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 13px; 
+            font-weight: 600; 
+            transition: all 0.3s; 
+            white-space: nowrap; 
+            width: 100%;
+        }
+        .btn:hover { transform: scale(1.05); }
+        .btn.primary { background: #6366f1; border-color: #6366f1; color: white; }
+        .btn.success { background: #10b981; border-color: #10b981; color: white; }
+        .btn.danger { background: #ef4444; border-color: #ef4444; color: white; }
+        .btn.secondary { background: rgba(236, 72, 153, 0.2); border-color: #ec4899; color: #ec4899; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .empty-state { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #94a3b8; 
+            font-size: 16px;
+        }
+        .scroll-container { 
+            overflow-y: auto; 
+            flex: 1; 
+        }
+        .scroll-container::-webkit-scrollbar { width: 6px; }
+        .scroll-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+        .scroll-container::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 3px; }
+        .loading { text-align: center; padding: 20px; color: #94a3b8; }
+        .loading::after { content: ' ⏳'; }
+    </style>
 </head>
 <body>
+    <div class="header">
+        <h1>🤝 Réseau d'Étudiants</h1>
+        <button class="btn primary" onclick="window.location.href='index.html'">← Retour</button>
+    </div>
 
-<div id="users">
-    <h2>Étudiants</h2>
-    <div id="users-list"></div>
-</div>
+    <div class="container">
+        <!-- Statistiques -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value" id="statsAmis">0</div>
+                <div class="stat-label">Amis</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="statsRequests">0</div>
+                <div class="stat-label">Demandes</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="statsTotal">0</div>
+                <div class="stat-label">Étudiants</div>
+            </div>
+        </div>
 
-<div id="requests">
-    <h2>Demandes reçues</h2>
-    <div id="requests-list"></div>
-</div>
+        <!-- Recherche et Découvrir -->
+        <div class="section">
+            <div class="section-title">� Découvrir des étudiants</div>
+            <input type="text" id="searchInput" class="search-box" placeholder="Cherche par nom ou email...">
+            <div class="users-grid" id="suggestionsBox">
+                <div class="loading">Chargement des utilisateurs...</div>
+            </div>
+        </div>
 
-<div id="friends">
-    <h2>Mes amis</h2>
-    <div id="friends-list"></div>
-</div>
+        <!-- Demandes d'amitié -->
+        <div class="section" id="requestsSection" style="display: none;">
+            <div class="section-title">� Demandes d'amitié reçues</div>
+            <div class="users-grid" id="requestsBox">
+                <div class="empty-state">Aucune demande</div>
+            </div>
+        </div>
 
-<script>
+        <!-- Mes amis -->
+        <div class="section" id="friendsSection" style="display: none;">
+            <div class="section-title">💚 Mes amis</div>
+            <div class="users-grid" id="friendsBox">
+                <div class="empty-state">Aucun ami pour le moment</div>
+            </div>
+        </div>
+    </div>
 
-// 🧑 ID de l'étudiant connecté (temporaire, doit venir de ton login)
-const ME = "1";
+    <script>
+        const API = 'http://localhost:3000/api';
+        let currentUser = null;
+        let allUsers = [];
+        let myFriends = [];
+        let friendRequests = [];
+        let pendingActions = new Set();
 
-let allUsers = [];
+        // ===== INITIALISATION =====
+        async function init() {
+            console.log('INIT: Démarrage...');
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            
+            if (!token || !userStr) {
+                console.log('INIT: Pas de token trouvé, redirection...');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                currentUser = JSON.parse(userStr);
+                console.log('INIT: User ID:', currentUser.id);
+                console.log('INIT: Token:', token.substring(0, 20) + '...');
+                
+                // Charger les données initiales
+                await loadData();
+                render();
+                
+                // Recharger toutes les 3 secondes pour la synchronisation
+                setInterval(async () => {
+                    await loadData();
+                    render();
+                }, 3000);
+                
+            } catch (e) {
+                console.error('INIT Error:', e);
+            }
+        }
 
-// Charger tous les utilisateurs
-async function loadUsers() {
-    const res = await fetch('/api/ami');
-    allUsers = await res.json();
+        // ===== CHARGER LES DONNÉES =====
+        async function loadData() {
+            const token = localStorage.getItem('token');
+            console.log('LOAD: Chargement des données...');
+            
+            try {
+                // Tous les utilisateurs
+                let res = await fetch(API + '/ami', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                allUsers = res.ok ? await res.json() : [];
+                console.log('LOAD: ' + allUsers.length + ' utilisateurs trouvés');
+                
+                // Mes amis acceptés (API)
+                res = await fetch(API + '/ami/friends', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                myFriends = res.ok ? await res.json() : [];
+                console.log('LOAD: ' + myFriends.length + ' amis (API)');
+                
+                // BONUS: Lire aussi depuis localStorage index.html pour fusionner
+                try {
+                    const localStorageData = localStorage.getItem('minireseau:v1');
+                    if (localStorageData) {
+                        const localState = JSON.parse(localStorageData);
+                        if (localState.friends && Array.isArray(localState.friends)) {
+                            console.log('LOAD: ' + localState.friends.length + ' amis trouvés en local');
+                            // Chercher les utilisateurs correspondant aux noms locaux
+                            localState.friends.forEach(friendName => {
+                                const user = allUsers.find(u => 
+                                    u.first_name === friendName || 
+                                    u.username === friendName ||
+                                    (u.first_name + ' ' + u.last_name) === friendName
+                                );
+                                if (user && !myFriends.find(f => f.id === user.id)) {
+                                    myFriends.push(user);
+                                    console.log('LOAD: Ami fusionné depuis local:', friendName);
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.log('LOAD: Pas de données locales à fusionner');
+                }
+                
+                // Demandes reçues
+                res = await fetch(API + '/ami/requests', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                friendRequests = res.ok ? await res.json() : [];
+                console.log('LOAD: ' + friendRequests.length + ' demandes');
+                
+            } catch (e) {
+                console.error('LOAD Error:', e);
+            }
+        }
 
-    renderUsers();
-    renderFriends();
-    renderRequests();
-}
+        // ===== AFFICHAGE =====
+        function render() {
+            console.log('RENDER: Mise à jour de l\'affichage');
+            
+            // Statistiques
+            document.getElementById('statsAmis').textContent = myFriends.length;
+            document.getElementById('statsRequests').textContent = friendRequests.length;
+            document.getElementById('statsTotal').textContent = allUsers.length;
+            
+            // Affichage des demandes
+            const hasRequests = friendRequests.length > 0;
+            document.getElementById('requestsSection').style.display = hasRequests ? 'flex' : 'none';
+            renderRequests();
+            
+            // Affichage des amis
+            const hasFriends = myFriends.length > 0;
+            document.getElementById('friendsSection').style.display = hasFriends ? 'flex' : 'none';
+            renderFriends();
+            
+            // Affichage des suggestions
+            renderSuggestions();
+        }
 
-function renderUsers() {
-    const box = document.getElementById("users-list");
-    box.innerHTML = "";
+        // ===== AFFICHER LES SUGGESTIONS =====
+        function renderSuggestions() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Filtrer: pas soi-même, pas ami, pas demande en attente
+            let suggestions = allUsers.filter(u => {
+                if (u.id === currentUser.id) return false;
+                if (myFriends.some(f => f.id === u.id)) return false;
+                if (friendRequests.some(r => r.id === u.id)) return false;
+                return true;
+            });
+            
+            // Chercher
+            if (search) {
+                suggestions = suggestions.filter(u => 
+                    (u.first_name || '').toLowerCase().includes(search) ||
+                    (u.username || '').toLowerCase().includes(search) ||
+                    (u.email || '').toLowerCase().includes(search)
+                );
+            }
+            
+            // Afficher
+            const box = document.getElementById('suggestionsBox');
+            if (suggestions.length === 0) {
+                box.innerHTML = '<div class="empty-state">Aucun étudiant trouvé</div>';
+                return;
+            }
+            
+            let html = '';
+            suggestions.forEach(u => {
+                const initial = (u.first_name || u.username || 'U')[0].toUpperCase();
+                html += '<div class="user-card">';
+                html += '<div class="avatar">' + initial + '</div>';
+                html += '<div class="user-info">';
+                html += '<div class="user-name">' + (u.first_name || u.username) + '</div>';
+                html += '<div class="user-email">' + (u.email || '') + '</div>';
+                html += '<div class="user-status">Étudiant</div>';
+                html += '</div>';
+                html += '<button class="btn primary" onclick="addFriend(' + u.id + ')" ' + (pendingActions.has('add-' + u.id) ? 'disabled' : '') + '>+ Ajouter</button>';
+                html += '</div>';
+            });
+            box.innerHTML = html;
+        }
 
-    allUsers.forEach(u => {
-        if (u.id === ME) return;
+        // ===== AFFICHER LES DEMANDES =====
+        function renderRequests() {
+            const box = document.getElementById('requestsBox');
+            if (friendRequests.length === 0) {
+                box.innerHTML = '<div class="empty-state">Aucune demande</div>';
+                return;
+            }
+            
+            let html = '';
+            friendRequests.forEach(u => {
+                const initial = (u.first_name || u.username || 'U')[0].toUpperCase();
+                html += '<div class="user-card">';
+                html += '<div class="avatar">' + initial + '</div>';
+                html += '<div class="user-info">';
+                html += '<div class="user-name">' + (u.first_name || u.username) + '</div>';
+                html += '<div class="user-email">' + (u.email || '') + '</div>';
+                html += '<div class="user-status">Demande reçue</div>';
+                html += '</div>';
+                html += '<div style="display: flex; gap: 8px; width: 100%;">';
+                html += '<button class="btn success" onclick="acceptFriend(' + u.id + ')" ' + (pendingActions.has('accept-' + u.id) ? 'disabled' : '') + '>✓ Accepter</button>';
+                html += '<button class="btn danger" onclick="rejectFriend(' + u.id + ')" ' + (pendingActions.has('reject-' + u.id) ? 'disabled' : '') + '>✗ Refuser</button>';
+                html += '</div>';
+                html += '</div>';
+            });
+            box.innerHTML = html;
+        }
 
-        const div = document.createElement('div');
-        div.className = "user-card";
-        div.innerHTML = `
-            <strong>${u.name}</strong><br>
-            <button onclick="addFriend('${u.id}')">Ajouter ami</button>
-        `;
-        box.appendChild(div);
-    });
-}
+        // ===== AFFICHER LES AMIS =====
+        function renderFriends() {
+            const box = document.getElementById('friendsBox');
+            if (myFriends.length === 0) {
+                box.innerHTML = '<div class="empty-state">Aucun ami</div>';
+                return;
+            }
+            
+            let html = '';
+            myFriends.forEach(u => {
+                const initial = (u.first_name || u.username || 'U')[0].toUpperCase();
+                html += '<div class="user-card">';
+                html += '<div class="avatar" style="background: linear-gradient(135deg, #10b981, #6366f1);">' + initial + '</div>';
+                html += '<div class="user-info">';
+                html += '<div class="user-name">' + (u.first_name || u.username) + '</div>';
+                html += '<div class="user-email">' + (u.email || '') + '</div>';
+                html += '<div class="user-status">✓ Ami</div>';
+                html += '</div>';
+                html += '<button class="btn danger" onclick="removeFriend(' + u.id + ')" ' + (pendingActions.has('remove-' + u.id) ? 'disabled' : '') + '>Retirer</button>';
+                html += '</div>';
+            });
+            box.innerHTML = html;
+        }
 
-function renderRequests() {
-    const me = allUsers.find(u => u.id === ME);
-    const box = document.getElementById("requests-list");
+        // ===== AJOUTER UN AMI =====
+        async function addFriend(userId) {
+            if (pendingActions.has('add-' + userId)) return;
+            pendingActions.add('add-' + userId);
+            
+            try {
+                const res = await fetch(API + '/ami/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({ toId: userId })
+                });
+                
+                if (res.ok) {
+                    console.log('Ami ajouté avec succès');
+                    
+                    // Ajouter aussi au localStorage pour la synchronisation
+                    const user = allUsers.find(u => u.id === userId);
+                    if (user) {
+                        const localData = localStorage.getItem('minireseau:v1');
+                        if (localData) {
+                            const localState = JSON.parse(localData);
+                            if (!localState.friends.includes(user.first_name || user.username)) {
+                                localState.friends.push(user.first_name || user.username);
+                                localStorage.setItem('minireseau:v1', JSON.stringify(localState));
+                                console.log('Ami ajouté aussi en local');
+                            }
+                        }
+                    }
+                    
+                    await loadData();
+                    render();
+                } else {
+                    console.error('Erreur ajout ami:', res.status);
+                }
+            } catch (e) {
+                console.error('Error addFriend:', e);
+            } finally {
+                pendingActions.delete('add-' + userId);
+            }
+        }
 
-    box.innerHTML = "";
+        // ===== ACCEPTER UNE DEMANDE =====
+        async function acceptFriend(userId) {
+            if (pendingActions.has('accept-' + userId)) return;
+            pendingActions.add('accept-' + userId);
+            
+            try {
+                const res = await fetch(API + '/ami/accept', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({ fromId: userId })
+                });
+                
+                if (res.ok) {
+                    console.log('Demande acceptée');
+                    await loadData();
+                    render();
+                }
+            } catch (e) {
+                console.error('Error acceptFriend:', e);
+            } finally {
+                pendingActions.delete('accept-' + userId);
+            }
+        }
 
-    me.requests.forEach(id => {
-        const u = allUsers.find(x => x.id === id);
+        // ===== REFUSER UNE DEMANDE =====
+        async function rejectFriend(userId) {
+            if (pendingActions.has('reject-' + userId)) return;
+            pendingActions.add('reject-' + userId);
+            
+            try {
+                const res = await fetch(API + '/ami/reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({ fromId: userId })
+                });
+                
+                if (res.ok) {
+                    console.log('Demande refusée');
+                    await loadData();
+                    render();
+                }
+            } catch (e) {
+                console.error('Error rejectFriend:', e);
+            } finally {
+                pendingActions.delete('reject-' + userId);
+            }
+        }
 
-        const div = document.createElement('div');
-        div.className = "user-card";
-        div.innerHTML = `
-            <strong>${u.name}</strong><br>
-            <button onclick="accept('${u.id}')">Accepter</button>
-        `;
-        box.appendChild(div);
-    });
-}
+        // ===== RETIRER UN AMI =====
+        async function removeFriend(userId) {
+            if (!confirm('Retirer cet ami?')) return;
+            if (pendingActions.has('remove-' + userId)) return;
+            pendingActions.add('remove-' + userId);
+            
+            try {
+                const res = await fetch(API + '/ami/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({ friendId: userId })
+                });
+                
+                if (res.ok) {
+                    console.log('Ami retiré');
+                    await loadData();
+                    render();
+                }
+            } catch (e) {
+                console.error('Error removeFriend:', e);
+            } finally {
+                pendingActions.delete('remove-' + userId);
+            }
+        }
 
-function renderFriends() {
-    const me = allUsers.find(u => u.id === ME);
-    const box = document.getElementById("friends-list");
+        // ===== ÉVÉNEMENTS =====
+        document.getElementById('searchInput').addEventListener('input', renderSuggestions);
 
-    box.innerHTML = "";
-
-    me.friends.forEach(id => {
-        const u = allUsers.find(x => x.id === id);
-
-        const div = document.createElement('div');
-        div.className = "user-card";
-        div.innerHTML = `
-            <strong>${u.name}</strong><br>
-            <button onclick="removeFriend('${u.id}')">Retirer</button>
-        `;
-        box.appendChild(div);
-    });
-}
-
-// ➤ Ajouter un ami
-async function addFriend(toId) {
-    await fetch('/api/ami/add', {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ fromId: ME, toId })
-    });
-
-    loadUsers();
-}
-
-// ➤ Accepter demande
-async function accept(fromId) {
-    await fetch('/api/ami/accept', {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ userId: ME, fromId })
-    });
-
-    loadUsers();
-}
-
-// ➤ Retirer ami
-async function removeFriend(friendId) {
-    await fetch('/api/ami/remove', {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ userId: ME, friendId })
-    });
-
-    loadUsers();
-}
-
-loadUsers();
-
-</script>
+        // ===== DÉMARRER =====
+        init();
+    </script>
 </body>
 </html>

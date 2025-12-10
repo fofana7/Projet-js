@@ -1,5 +1,5 @@
 // backend/controllers/postController.js
-const { pool } = require('../server'); // Assurez-vous d'importer votre Pool DB
+const { pool } = require('../config/db'); // Utiliser la configuration DB centralisée
 
 // 1. Publier un nouveau post
 exports.createPost = async (req, res) => {
@@ -33,7 +33,7 @@ exports.getTimeline = async (req, res) => {
         const result = await pool.query(
             `SELECT 
                 p.id, p.content, p.image_url, p.created_at, 
-                u.id AS user_id, u.username, u.avatarurl 
+                u.id AS user_id, u.username, COALESCE(u.avatarurl, 'https://i.pravatar.cc/150') AS avatarurl 
             FROM posts p
             JOIN users u ON p.user_id = u.id
             ORDER BY p.created_at DESC

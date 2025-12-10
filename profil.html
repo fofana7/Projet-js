@@ -7,216 +7,475 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --primary-color: #007bff; /* Bleu professionnel */
-            --secondary-color: #6c757d;
-            --background-color: #f8f9fa;
-            --card-background: #ffffff;
-            --text-color: #212529;
-            --border-radius: 12px;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f59e0b;
+            --background-color: #0f172a;
+            --card-background: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --border-radius: 16px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.3);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body { 
             margin: 0; 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--background-color); 
-            color: var(--text-color); 
+            background-color: var(--background-color);
+            background-image: 
+                radial-gradient(at 20% 50%, rgba(102, 126, 234, 0.1) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(118, 75, 162, 0.1) 0px, transparent 50%);
+            color: var(--text-primary); 
             line-height: 1.6;
         }
 
         .container {
-            max-width: 650px;
-            margin: 40px auto;
+            max-width: 900px;
+            margin: 0 auto;
             padding: 0 20px;
         }
 
-        /* --- En-tête de profil --- */
+        /* --- En-tête Premium --- */
         .profile-header-area { 
             position: relative; 
-            height: 150px; 
-            margin-bottom: 70px;
-        }
-        .header-bg {
-            background: linear-gradient(135deg, var(--primary-color), #0056b3); 
-            height: 100%; 
-            border-radius: var(--border-radius); 
-            box-shadow: var(--shadow);
-        }
-        .profile-avatar { 
-            position: absolute; 
-            bottom: -50px; 
-            left: 20px; 
-            width: 120px; 
-            height: 120px; 
-            border-radius: 50%; 
-            border: 6px solid var(--background-color); 
-            object-fit: cover; 
-            background-color: var(--card-background);
+            height: 200px; 
+            margin-bottom: 100px;
+            margin-top: 20px;
         }
 
-        /* --- Informations et Stats --- */
-        .profile-info-section { 
-            padding: 0 20px; 
-            margin-bottom: 30px; 
+        .header-bg {
+            background: var(--primary-gradient);
+            height: 100%; 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
         }
+
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent);
+            pointer-events: none;
+        }
+
+        .profile-avatar { 
+            position: absolute; 
+            bottom: -60px; 
+            left: 40px; 
+            width: 140px; 
+            height: 140px; 
+            border-radius: 50%; 
+            border: 8px solid var(--card-background); 
+            object-fit: cover; 
+            background-color: var(--card-background);
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Informations Utilisateur --- */
+        .profile-info-section { 
+            padding: 20px 0; 
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .profile-info-text { 
+            padding-left: 0;
+        }
+
         .profile-pseudo { 
             margin: 0; 
-            font-size: 2rem; 
+            font-size: 2.5rem; 
             font-weight: 700; 
-            color: var(--text-color);
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+
         .profile-handle { 
-            margin: 5px 0 15px; 
+            margin: 8px 0 12px; 
             font-size: 1rem; 
-            color: var(--secondary-color);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .profile-handle::before {
+            content: '✉️';
+        }
+
         .profile-bio { 
-            margin: 15px 0 25px; 
-            color: #495057; 
+            margin: 15px 0 20px; 
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 600px;
+        }
+
+        /* --- Stats Section --- */
+        .stats-container {
+            display: flex;
+            gap: 20px;
         }
 
         .stats-bar { 
-            display: flex; 
-            gap: 25px; 
-            padding: 15px 0; 
-            border-top: 1px solid #e9ecef;
-        }
-        .stat-item { 
-            font-size: 0.95rem; 
-            color: var(--secondary-color);
-        }
-        .stat-item span { 
-            font-weight: 600; 
-            color: var(--text-color);
-            margin-right: 4px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
         }
 
-        /* --- Composants de carte (Sections) --- */
+        .stat-item { 
+            background: var(--card-background);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .stat-item:hover {
+            background: var(--card-hover);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .stat-value { 
+            font-weight: 700;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-label { 
+            font-size: 0.85rem; 
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* --- Boutons d'Action --- */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: var(--card-background);
+            color: var(--text-primary);
+            border: 1.5px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-hover);
+            border-color: var(--primary-color);
+        }
+
+        /* --- Composants de carte --- */
         .card {
-            margin: 20px 0; 
-            background: var(--card-background); 
+            margin: 30px 0; 
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
             border-radius: var(--border-radius); 
-            padding: 25px; 
-            box-shadow: var(--shadow);
+            padding: 30px; 
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         /* --- Section Amis --- */
         .friends-section h3 { 
-            margin-top: 0; 
-            color: var(--primary-color); 
-            font-size: 1.2rem;
+            color: var(--text-primary);
+            font-size: 1.3rem;
         }
+
         .friends-list { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 20px; 
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 20px;
             justify-content: flex-start;
         }
+
         .friend-card { 
-            width: 60px;
             text-align: center; 
             cursor: pointer; 
-            transition: transform 0.2s, opacity 0.2s; 
-            font-size: 0.8rem;
+            transition: var(--transition);
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid transparent;
         }
+
         .friend-card:hover { 
-            transform: translateY(-5px); 
-            opacity: 0.9;
-        }
-        .friend-card img { 
-            width: 60px; 
-            height: 60px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            border: 3px solid #ced4da;
-            margin-bottom: 5px; 
-            transition: border-color 0.2s;
-        }
-        .friend-card:hover img {
+            transform: translateY(-8px);
+            background: rgba(102, 126, 234, 0.1);
             border-color: var(--primary-color);
         }
+
+        .friend-card img { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 3px solid var(--primary-color);
+            margin-bottom: 12px; 
+            transition: var(--transition);
+        }
+
+        .friend-card:hover img {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
         .friend-card p { 
             margin: 0; 
             word-break: break-word; 
-            line-height: 1.2;
+            line-height: 1.3;
             font-weight: 500;
-            color: var(--text-color);
+            color: var(--text-primary);
+            font-size: 0.9rem;
         }
 
         /* --- Formulaire de modification --- */
         .edit-form-content h3 {
-            color: var(--primary-color);
-            margin-top: 0;
+            color: var(--text-primary);
         }
         .edit-form-content label {
             display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
+            margin-top: 18px;
+            margin-bottom: 8px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
         }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
         .edit-form-content input[type="text"], 
         .edit-form-content input[type="file"], 
         .edit-form-content textarea { 
             width: 100%; 
-            padding: 12px; 
-            margin: 5px 0 10px; 
-            border-radius: 8px; 
-            border: 1px solid #dee2e6; 
+            padding: 14px 16px; 
+            margin: 8px 0 0; 
+            border-radius: 10px; 
+            border: 1.5px solid var(--border-color); 
+            background: rgba(102, 126, 234, 0.03);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
             box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: var(--transition);
         }
-        .edit-form-content input:focus, .edit-form-content textarea:focus {
+
+        .edit-form-content input::placeholder,
+        .edit-form-content textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .edit-form-content input:focus, 
+        .edit-form-content textarea:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            background: rgba(102, 126, 234, 0.08);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             outline: none;
         }
+
         .edit-form-content textarea { 
             resize: vertical; 
-            min-height: 80px; 
+            min-height: 120px;
+            font-family: inherit;
         }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
         .edit-form-content button { 
-            background: var(--primary-color); 
+            background: var(--primary-gradient);
             color: #fff; 
             border: none; 
-            border-radius: 8px; 
-            padding: 12px 20px; 
-            margin-top: 20px;
-            width: 100%; 
+            border-radius: 10px; 
+            padding: 14px 28px; 
+            flex: 1;
             cursor: pointer; 
-            font-weight: 600; 
-            transition: background-color 0.2s;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
+
         .edit-form-content button:hover { 
-            background: #0056b3; 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .edit-form-content button:active {
+            transform: translateY(0);
+        }
+
+        .edit-form-content button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .success-msg { 
             text-align: center; 
-            color: #28a745; 
+            color: var(--success-color);
             font-weight: 600; 
             display: none; 
-            margin-top: 15px; 
-            padding: 10px;
-            background-color: #d4edda;
-            border-radius: 8px;
+            margin-top: 16px; 
+            padding: 14px 16px;
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            animation: slideIn 0.3s ease-out;
         }
 
-        /* --- Responsive basique --- */
-        @media(max-width: 768px){
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state::before {
+            content: '👥';
+            display: block;
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        /* --- Responsive --- */
+        @media(max-width: 768px) {
             .container {
-                margin: 20px auto;
-                padding: 0 10px;
+                margin: 0 auto;
+                padding: 0 16px;
             }
-            .profile-avatar { 
-                width: 100px; 
-                height: 100px; 
-                bottom: -40px; 
-                left: 10px;
-            }
+
             .profile-header-area {
-                margin-bottom: 50px;
+                height: 150px;
+                margin-bottom: 80px;
+            }
+
+            .profile-avatar { 
+                width: 120px; 
+                height: 120px; 
+                bottom: -50px; 
+                left: 20px;
+            }
+
+            .profile-info-section {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-pseudo {
+                font-size: 2rem;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+
+            .friends-list {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -231,37 +490,69 @@
     </header>
 
     <section class="profile-info-section">
-        <h2 id="profilePseudo" class="profile-pseudo">Pseudo</h2>
-        <p id="profileEmail" class="profile-handle">email@exemple.com</p>
-        <p id="profileBio" class="profile-bio">Ta bio ici...</p>
-        
-        <div class="stats-bar">
-            <div class="stat-item"><span id="friendsCount">0</span> Amis</div>
-            <div class="stat-item"><span id="followersCount">0</span> Followers</div>
-            <div class="stat-item"><span id="postsCount">0</span> Publications</div>
+        <div class="profile-info-text">
+            <h2 id="profilePseudo" class="profile-pseudo">Chargement...</h2>
+            <p id="profileEmail" class="profile-handle">Utilisateur</p>
+            <p id="profileBio" class="profile-bio">Bio non définie...</p>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="friendsCount">0</span>
+                    <span class="stat-label">Amis</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="followersCount">0</span>
+                    <span class="stat-label">Followers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="postsCount">0</span>
+                    <span class="stat-label">Posts</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="editProfileScroll()">
+                ✏️ Modifier le profil
+            </button>
+            <button class="btn btn-secondary" onclick="shareProfile()">
+                🔗 Partager
+            </button>
         </div>
     </section>
 
     <section class="friends-section card">
-        <h3>👥 Connexions Récents</h3>
+        <h3>👥 Connexions Récentes</h3>
         <div class="friends-list" id="friendsList">
-            </div>
+            <div class="empty-state">Aucun ami trouvé</div>
+        </div>
     </section>
 
     <section class="edit-form-section card">
-        <h3>⚙️ Modifier le profil</h3>
+        <h3>✏️ Modifier votre profil</h3>
         <form id="profileEditForm" class="edit-form-content">
-            <label for="editPseudo">Nom d'utilisateur</label>
-            <input type="text" id="editPseudo" required>
+            <div class="form-group">
+                <label for="editPseudo">👤 Nom d'utilisateur</label>
+                <input type="text" id="editPseudo" placeholder="Votre nom complet" required>
+            </div>
 
-            <label for="editAvatar">Changer d'avatar (Optionnel)</label>
-            <input type="file" id="editAvatar" accept="image/*">
+            <div class="form-group">
+                <label for="editBio">📝 Biographie</label>
+                <textarea id="editBio" placeholder="Décrivez-vous en quelques mots..." maxlength="160"></textarea>
+                <small style="color: var(--text-muted); font-size: 0.85rem;">Max 160 caractères</small>
+            </div>
 
-            <label for="editBio">Biographie</label>
-            <textarea id="editBio" maxlength="160"></textarea>
+            <div class="form-group">
+                <label for="editAvatar">📷 Photo de profil (Optionnel)</label>
+                <input type="file" id="editAvatar" accept="image/*">
+                <small style="color: var(--text-muted); font-size: 0.85rem;">JPG, PNG ou GIF - Max 5MB</small>
+            </div>
 
-            <button type="submit" id="saveButton">Enregistrer les modifications</button>
-            <div class="success-msg" id="successMsg">Profil mis à jour avec succès !</div>
+            <div class="form-actions">
+                <button type="submit" id="saveButton">💾 Enregistrer</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()" style="flex: 1; padding: 14px 28px; border: none; background: var(--card-hover); color: var(--text-primary); border-radius: 10px; cursor: pointer; font-weight: 600;">Annuler</button>
+            </div>
+            <div class="success-msg" id="successMsg">✓ Profil mis à jour avec succès !</div>
         </form>
     </section>
 </div>
@@ -269,18 +560,22 @@
 <script>
     // Constantes
     const STORAGE_KEY = "minireseaupro:user_profile";
-    const DEFAULT_AVATAR = "avatar-placeholder.png";
+    const API_BASE = window.location.origin;
+    
+    // État global
+    let currentUser = null;
 
     /**
-     * Logique pour gérer les données de l'utilisateur (Modèle).
+     * Logique pour gérer les données de l'utilisateur via l'API
      */
     const UserData = {
-        // Profil par défaut pour la première visite
+        // Profil par défaut pour les cas où l'API n'est pas disponible
         defaultProfile: {
-            username: "John Doe Pro",
-            email: "john.doe@monreseau.com",
-            bio: "Développeur Full-Stack passionné. J'aime le JavaScript propre et modulaire. Toujours à la recherche de nouveaux défis.",
-            avatar: DEFAULT_AVATAR,
+            id: 'demo',
+            username: "Utilisateur Demo",
+            email: "demo@example.com",
+            bio: "Biographie non définie",
+            avatarurl: "https://i.pravatar.cc/150",
             friends: [
                 { username: "Alice_Dev", avatar: "https://i.pravatar.cc/60?img=1" },
                 { username: "Bob_UX", avatar: "https://i.pravatar.cc/60?img=2" },
@@ -292,32 +587,103 @@
             posts: 42
         },
 
-        // Récupère l'utilisateur actuel (ou le profil par défaut)
-        getCurrentUser() {
+        // Récupère l'utilisateur de localStorage.user (défini par la page de login)
+        async getCurrentUser() {
             try {
-                const user = localStorage.getItem(STORAGE_KEY);
-                return user ? JSON.parse(user) : this.defaultProfile;
+                const token = localStorage.getItem('token');
+                const storedUser = localStorage.getItem('user');
+                
+                if (token && storedUser) {
+                    const parsedUser = JSON.parse(storedUser);
+                    // Essayer de récupérer depuis l'API
+                    try {
+                        const response = await fetch(`${API_BASE}/api/users/me`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            currentUser = data.user;
+                            // Sauvegarder en localStorage aussi
+                            localStorage.setItem('user', JSON.stringify(currentUser));
+                            return currentUser;
+                        }
+                    } catch (e) {
+                        console.log('API non disponible, utilisation du localStorage');
+                    }
+                    
+                    // Fallback: retourner l'utilisateur de localStorage
+                    return parsedUser;
+                }
+                
+                // Pas d'utilisateur connecté
+                return this.defaultProfile;
             } catch (error) {
-                console.error("Erreur de lecture LocalStorage:", error);
+                console.error("Erreur de lecture utilisateur:", error);
                 return this.defaultProfile;
             }
         },
 
-        // Sauvegarde les données de l'utilisateur
-        saveUser(user) {
+        // Sauvegarde les données du profil via l'API
+        // NOTE: L'avatar est géré séparément en localStorage
+        async saveUser(userData) {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    // Fallback: localStorage uniquement
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+                    return userData;
+                }
+
+                // Préparer les données à envoyer à l'API
+                // IMPORTANT: On n'envoie PAS l'avatar (trop volumineux)
+                // L'avatar est géré localement en localStorage
+                const dataToSend = {
+                    username: userData.username,
+                    bio: userData.bio
+                };
+
+                console.log('Envoi des données au serveur:', dataToSend);
+
+                const response = await fetch(`${API_BASE}/api/users/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToSend)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    // Charger aussi l'avatar depuis localStorage s'il existe
+                    const avatarData = localStorage.getItem('userAvatarLocal');
+                    if (avatarData) {
+                        currentUser.avatarurl = avatarData;
+                    }
+                    // Sauvegarder aussi en localStorage
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    return currentUser;
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Erreur lors de la sauvegarde');
+                }
             } catch (error) {
-                console.error("Erreur d'écriture LocalStorage:", error);
+                console.error("Erreur de sauvegarde:", error);
+                throw error;
             }
         }
     };
 
     /**
-     * Logique pour l'affichage et les interactions de l'interface (Vue/Contrôleur).
+     * Gestion de l'interface utilisateur
      */
     const ProfileManager = {
-        // Références aux éléments du DOM
         elements: {
             pseudo: document.getElementById("profilePseudo"),
             email: document.getElementById("profileEmail"),
@@ -337,9 +703,9 @@
         },
 
         // Initialise l'application
-        init() {
+        async init() {
             this.bindEvents();
-            this.loadProfile();
+            await this.loadProfile();
         },
 
         // Attache les écouteurs d'événements
@@ -351,26 +717,31 @@
         },
 
         // Affiche les données de l'utilisateur sur la page
-        loadProfile() {
-            const user = UserData.getCurrentUser();
+        async loadProfile() {
+            const user = await UserData.getCurrentUser();
+            currentUser = user;
 
-            // 1. Mise à jour des informations de base
-            this.elements.pseudo.textContent = user.username;
-            this.elements.email.textContent = user.email;
-            this.elements.bio.textContent = user.bio || "Bio non renseignée.";
-            this.elements.avatar.src = user.avatar;
+            // Vérifier s'il y a un avatar en localStorage (image modifiée localement)
+            const avatarData = localStorage.getItem('userAvatarLocal');
+            const avatarToDisplay = avatarData || user.avatarurl || "https://i.pravatar.cc/150";
 
-            // 2. Mise à jour des statistiques
-            this.elements.friendsCount.textContent = user.friends.length;
+            // Mise à jour des informations de base
+            this.elements.pseudo.textContent = user.username || "Utilisateur";
+            this.elements.email.textContent = user.email || "email@example.com";
+            this.elements.bio.textContent = user.bio || "Bio non renseignée";
+            this.elements.avatar.src = avatarToDisplay;
+
+            // Mise à jour des statistiques
+            this.elements.friendsCount.textContent = user.friends?.length || 0;
             this.elements.followersCount.textContent = user.followers || 0;
             this.elements.postsCount.textContent = user.posts || 0;
 
-            // 3. Remplissage du formulaire d'édition
-            this.elements.editPseudo.value = user.username;
+            // Remplissage du formulaire d'édition
+            this.elements.editPseudo.value = user.username || "";
             this.elements.editBio.value = user.bio || "";
             
-            // 4. Rendu de la liste d'amis
-            this.renderFriends(user.friends);
+            // Rendu de la liste d'amis
+            this.renderFriends(user.friends || []);
         },
 
         // Génère le HTML pour une carte d'ami
@@ -387,61 +758,133 @@
         renderFriends(friends) {
             const container = this.elements.friendsList;
             container.innerHTML = ""; // Vide le contenu précédent
+            
+            if (friends.length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucun ami trouvé</div>';
+                return;
+            }
+            
             friends.forEach(friend => {
                 container.appendChild(this.createFriendCard(friend));
             });
         },
 
         // Gère la soumission du formulaire
-        handleProfileUpdate() {
-            this.elements.saveButton.disabled = true; // Empêche les clics multiples
+        async handleProfileUpdate() {
+            this.elements.saveButton.disabled = true; 
+            this.elements.successMsg.style.display = 'none';
             
-            const currentUser = UserData.getCurrentUser();
-            const newPseudo = this.elements.editPseudo.value.trim();
-            const newBio = this.elements.editBio.value.trim();
-            const avatarFile = this.elements.editAvatar.files[0];
+            try {
+                const newPseudo = this.elements.editPseudo.value.trim();
+                const newBio = this.elements.editBio.value.trim();
+                const avatarFile = this.elements.editAvatar.files[0];
 
-            // 1. Mise à jour immédiate des champs texte
-            if (newPseudo) currentUser.username = newPseudo;
-            currentUser.bio = newBio;
+                if (!newPseudo) {
+                    this.showError("Le nom d'utilisateur est requis");
+                    this.elements.saveButton.disabled = false;
+                    return;
+                }
 
-            // 2. Gestion asynchrone du fichier avatar
-            if (avatarFile) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    currentUser.avatar = e.target.result;
-                    this.saveAndReload(currentUser);
-                };
-                reader.onerror = (e) => {
-                    console.error("Erreur de lecture de fichier:", e);
-                    this.saveAndReload(currentUser); // Sauvegarde sans l'avatar si erreur
-                };
-                reader.readAsDataURL(avatarFile);
-            } else {
-                this.saveAndReload(currentUser);
+                // ===== GESTION DE L'AVATAR EN LOCAL =====
+                // Sauvegarder l'avatar en localStorage si un nouveau fichier est sélectionné
+                if (avatarFile) {
+                    const reader = new FileReader();
+                    const avatarBase64 = await new Promise((resolve, reject) => {
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(avatarFile);
+                    });
+                    
+                    // Sauvegarder immédiatement en localStorage
+                    localStorage.setItem('userAvatarLocal', avatarBase64);
+                    console.log('✓ Avatar sauvegardé en localStorage');
+                }
+
+                // ===== SAUVEGARDER NOM ET BIO EN BD =====
+                // Sauvegarder via l'API
+                const updatedUser = await UserData.saveUser({
+                    id: currentUser?.id,
+                    username: newPseudo,
+                    bio: newBio,
+                    email: currentUser?.email,
+                    friends: currentUser?.friends,
+                    followers: currentUser?.followers,
+                    posts: currentUser?.posts
+                });
+
+                // Recharger le profil avec les nouvelles données
+                await this.loadProfile();
+                this.showSuccessMessage();
+                this.elements.editAvatar.value = '';
+
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour:', error);
+                this.showError(error.message || 'Erreur lors de la sauvegarde');
+            } finally {
+                this.elements.saveButton.disabled = false;
             }
-        },
-        
-        // Sauvegarde les données, recharge l'affichage et montre la notification
-        saveAndReload(user) {
-            UserData.saveUser(user);
-            this.loadProfile(); // Recharge l'affichage avec les nouvelles données
-            this.showSuccessMessage();
-            this.elements.saveButton.disabled = false; // Réactive le bouton
-            this.elements.editAvatar.value = ''; // Réinitialise l'input file
         },
 
         // Affichage du message de succès
         showSuccessMessage() {
             const msg = this.elements.successMsg;
             msg.style.display = "block";
+            msg.textContent = "✓ Profil mis à jour avec succès !";
             setTimeout(() => { 
                 msg.style.display = "none"; 
             }, 2500);
+        },
+
+        // Affichage du message d'erreur
+        showError(errorMessage) {
+            const msg = this.elements.successMsg;
+            msg.style.display = "block";
+            msg.textContent = "❌ " + errorMessage;
+            msg.style.color = "#ef4444";
+            setTimeout(() => { 
+                msg.style.display = "none"; 
+                msg.style.color = "var(--success-color)";
+            }, 3000);
         }
     };
 
-    // Démarrage de l'application une fois que le DOM est prêt
+    // Fonction pour scroller vers le formulaire d'édition
+    function editProfileScroll() {
+        document.querySelector('.edit-form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('editPseudo').focus();
+    }
+
+    // Fonction pour partager le profil
+    function shareProfile() {
+        const user = currentUser || UserData.defaultProfile;
+        const profileUrl = window.location.href;
+        const shareText = `Visitez mon profil: ${user.username}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Mon Profil',
+                text: shareText,
+                url: profileUrl
+            }).catch(err => console.log('Partage annulé'));
+        } else {
+            navigator.clipboard.writeText(profileUrl).then(() => {
+                alert('Lien du profil copié! 🎉');
+            }).catch(err => {
+                alert('Impossible de copier le lien');
+            });
+        }
+    }
+
+    // Fonction pour réinitialiser le formulaire
+    function resetForm() {
+        const user = currentUser || UserData.defaultProfile;
+        document.getElementById('editPseudo').value = user.username || "";
+        document.getElementById('editBio').value = user.bio || "";
+        document.getElementById('editAvatar').value = '';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    // Démarrage de l'application
     document.addEventListener('DOMContentLoaded', () => {
         ProfileManager.init();
     });

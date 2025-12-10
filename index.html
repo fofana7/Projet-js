@@ -67,6 +67,8 @@
                   <button id="profile-btn" onclick="location.href='profil.html'">🧾 Profil</button>
                   <button id="messages-btn" onclick="location.href='message.html'">🧾 Messages</button>
                   <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                  <button id="constellation-btn" onclick="location.href='constellation.html'">🌌 Constellation</button>
+                  <button id="settings-btn" onclick="location.href='page_parametre.html'">⚙️ Paramètres</button>
                   
 
                 </nav>
@@ -264,7 +266,8 @@ window.goToProfile = function() {
                 return;
             }
 
-            window.location.href = "profile.html"; // Redirection réelle
+            // Redirection vers la page de profil (nom de fichier en français dans le projet)
+            window.location.href = "profil.html";
         };
         function showMessage(message, type = 'error') {
             const container = document.getElementById('message-container');
@@ -503,12 +506,12 @@ window.goToProfile = function() {
             if (!token) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/users/me`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                                const response = await fetch(`${API_BASE_URL}/users/me`, {
+                                        method: 'GET',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                });
 
-                const result = await response.json();
+                                const result = await response.json();
 
                 if (response.ok) {
                     displayUserProfile(result.user);
@@ -597,23 +600,45 @@ window.goToProfile = function() {
             });
         }
         
-        publishBtn.addEventListener('click', ()=>{
+        publishBtn.addEventListener('click', async ()=>{
             if (!is_authenticated) return showAuthView('login');
 
-            const text = composer.value.trim(); if(!text) return showMessage('Le message est vide.');
+            const text = composer.value.trim(); 
+            if(!text) return showMessage('Le message est vide.');
             
-            const authorName = `${currentUser.first_name} ${currentUser.last_name}`.trim() || currentUser.username;
-            const p = {
-                id: uid(),
-                text,
-                ts: Date.now(),
-                likes: 0,
-                comments: [],
-                authorName: authorName,
-                authorHandle: `@${currentUser.username}`,
-                authorInitials: getInitials(authorName)
-            };
-            localState.posts.push(p); save(); renderFeed(); composer.value=''; showMessage('Votre post a été publié', 'success');
+            try {
+                // Récupérer le token
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    return showAuthView('login');
+                }
+
+                // Envoyer le post à l'API
+                const response = await fetch(`${API_BASE_URL}/posts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content: text })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    return showMessage(error.message || 'Erreur lors de la publication');
+                }
+
+                // Succès: vider le formulaire
+                composer.value = '';
+                showMessage('Votre post a été publié', 'success');
+
+                // Recharger le fil d'actualité après un court délai
+                setTimeout(() => loadFeedFromAPI(), 500);
+
+            } catch (error) {
+                console.error('Erreur publication:', error);
+                showMessage('Erreur de connexion au serveur');
+            }
         });
         clearBtn.addEventListener('click', ()=>composer.value='');
 
@@ -642,6 +667,33 @@ window.goToProfile = function() {
 
         document.getElementById('searchInput').addEventListener('input',(e)=>{ renderFeed(e.target.value.toLowerCase()); });
 
+        // Charger le fil d'actualité depuis l'API backend
+        async function loadFeedFromAPI() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/timeline`);
+                if (!response.ok) {
+                    console.error('Erreur chargement posts:', response.status);
+                    return;
+                }
+                const posts = await response.json();
+                
+                // Formater les posts depuis l'API
+                localState.posts = posts.map(post => ({
+                    id: post.id,
+                    text: post.content,
+                    ts: new Date(post.created_at).getTime(),
+                    likes: 0,
+                    comments: [],
+                    authorName: post.username || 'Utilisateur',
+                    authorHandle: `@${post.username || 'user'}`,
+                    authorInitials: (post.username || 'U').substring(0, 2).toUpperCase()
+                }));
+
+                renderFeed();
+            } catch (error) {
+                console.error('Erreur chargement fil:', error);
+            }
+        }
 
         // =======================
         // INITIALISATION

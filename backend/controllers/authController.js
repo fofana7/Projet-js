@@ -40,8 +40,9 @@ exports.register = async (req, res) => {
         if (err.code === '23505') {
             return res.status(400).json({ error: 'Nom d\'utilisateur ou email déjà utilisé' });
         }
-        console.error(err);
-        res.status(500).json({ error: 'Erreur serveur' });
+        console.error('AUTH REGISTER ERROR:', err);
+        // Retourne aussi le message d'erreur pour faciliter le debug local
+        res.status(500).json({ error: 'Erreur serveur', details: err.message });
     }
 };
 
@@ -79,7 +80,8 @@ exports.login = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Erreur serveur' });
+        console.error('AUTH LOGIN ERROR:', err);
+        // Retourne aussi le message d'erreur pour faciliter le debug local
+        res.status(500).json({ error: 'Erreur serveur', details: err.message });
     }
 };
