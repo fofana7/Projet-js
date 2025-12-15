@@ -155,6 +155,34 @@ async function initializeDatabase() {
         `);
         console.log('✓ Table group_members créée/vérifiée');
 
+        // Créer les tables pour likes et commentaires
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS post_likes (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(post_id, user_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_post_likes_post ON post_likes(post_id);
+            CREATE INDEX IF NOT EXISTS idx_post_likes_user ON post_likes(user_id);
+        `);
+        console.log('✓ Table post_likes créée/vérifiée');
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS post_comments (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id);
+            CREATE INDEX IF NOT EXISTS idx_post_comments_user ON post_comments(user_id);
+        `);
+        console.log('✓ Table post_comments créée/vérifiée');
+
     } catch (error) {
         console.error('⚠️ Erreur lors de la migration:', error.message);
         console.error('Code erreur:', error.code);
@@ -174,13 +202,18 @@ async function testDatabaseConnection() {
 }
 
 // Routes API (AVANT de lancer le serveur)
+const notificationRoutes = require('./routes/notifications');
+const postInteractionRoutes = require('./routes/postInteractions');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/posts/interactions', postInteractionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/ami', friendsRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/constellation', constellationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Servir le frontend (HTML/CSS/JS)
 // Priorité 1: frontend organisé (nouveau)

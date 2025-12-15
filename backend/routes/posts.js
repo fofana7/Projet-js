@@ -4,9 +4,9 @@ const router = express.Router();
 const postController = require('../controllers/postController');
 const { protect, requireRole } = require('../middleware/auth'); 
 
-// 1. Récupérer le fil d'actualité (Timeline) - Ne nécessite pas toujours le token, mais c'est mieux si on veut personnaliser le fil
+// 1. Récupérer le fil d'actualité (Timeline) - REQUIERT LE TOKEN pour filtrer par amis acceptés
 // GET /api/posts/timeline 
-router.get('/timeline', postController.getTimeline); 
+router.get('/timeline', protect, postController.getTimeline); 
 
 // 2. Créer une nouvelle publication - REQUIERT LE TOKEN (protection)
 // POST /api/posts
