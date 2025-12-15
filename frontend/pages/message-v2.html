@@ -708,7 +708,8 @@
       <div id="privateForm">
         <div class="form-group">
           <label>Avec qui? *</label>
-          <input type="text" id="privateName" placeholder="Nom du contact">
+          <input type="text" id="privateName" placeholder="Recherche un ami..." oninput="filterPrivateFriends()">
+          <div id="privateFriendsSuggestions" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
         </div>
       </div>
 
@@ -913,14 +914,16 @@
       if (!el) return;
       el.classList.add('active');
 
-      // Quand on ouvre la création de conversation en mode groupe,
-      // on rafraîchit la liste des amis pour être toujours à jour.
+      // Quand on ouvre la création de conversation, charger les amis
       if (id === 'newConvModal') {
-        const typeSel = document.getElementById('convType');
-        if (typeSel && typeSel.value === 'group') {
-          loadFriendsForMessaging();
-          renderGroupFriendSuggestions();
-        }
+        loadFriendsForMessaging().then(() => {
+          const typeSel = document.getElementById('convType');
+          if (typeSel && typeSel.value === 'private') {
+            filterPrivateFriends();
+          } else if (typeSel && typeSel.value === 'group') {
+            renderGroupFriendSuggestions();
+          }
+        });
       }
     }
 
@@ -988,7 +991,7 @@
     // ========================================
     // CONVERSATION FUNCTIONS
     // ========================================
-    function createConversation() {
+    async function createConversation() {
       const type = document.getElementById('convType').value;
       let conv;
 
@@ -998,14 +1001,37 @@
           showMessage('convMessage', '❌ Nom requis', 'var(--danger)');
           return;
         }
+
+        // Chercher le contact dans les amis chargés
+        let contactFound = null;
+        
+        // D'abord chercher une correspondance exacte (insensible à la casse)
+        contactFound = friendsForMessaging.find(f => 
+          normalizeName(getFriendDisplayName(f)) === normalizeName(name)
+        );
+
+        // Si pas de correspondance exacte, chercher une correspondance partielle
+        if (!contactFound) {
+          contactFound = friendsForMessaging.find(f => 
+            getFriendDisplayName(f).toLowerCase().includes(name.toLowerCase())
+          );
+        }
+
+        if (!contactFound) {
+          showMessage('convMessage', `❌ "${name}" n'est pas dans tes amis. Assurez-vous d'être amis d'abord.`, 'var(--danger)');
+          return;
+        }
+
+        const displayName = getFriendDisplayName(contactFound);
         conv = {
-          id: uid(),
+          id: 'db_' + contactFound.id,
           type: 'private',
-          title: name,
-          members: [state.me.username, name],
+          title: displayName,
+          members: [state.me.username, displayName],
           messages: [],
           createdAt: Date.now(),
-          unread: 0
+          unread: 0,
+          contactId: contactFound.id
         };
       } else if (type === 'group') {
         const name = document.getElementById('groupName').value.trim();
@@ -1102,16 +1128,97 @@
       }, 700);
     }
 
-    function openConversation(convId) {
+    async function openConversation(convId) {
       const conv = state.conversations.find(c => c.id === convId);
       if (!conv) return;
 
       currentConvId = convId;
       conv.unread = 0;
 
+      // Charger les messages depuis la base de données si conversation privée
+      if (conv.type === 'private') {
+        await loadMessagesFromDB(conv);
+      }
+
       renderSidebar();
       renderChat(conv);
       saveState();
+    }
+
+    async function loadMessagesFromDB(conv) {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        // Si on a le contactId (depuis la DB), l'utiliser directement
+        if (conv.contactId) {
+          const messagesRes = await fetch(`http://localhost:3000/api/messages/${conv.contactId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+
+          if (!messagesRes.ok) return;
+
+          const messages = await messagesRes.json();
+          const recipientName = conv.members.find(m => m !== state.me.username);
+          
+          // Convertir les messages de la DB au format de l'app
+          conv.messages = messages.map(msg => ({
+            id: msg.id,
+            author: msg.sender_id === state.me.id ? state.me.username : recipientName,
+            authorId: msg.sender_id,
+            text: msg.text,
+            ts: new Date(msg.created_at).getTime(),
+            reactions: {},
+            read: msg.is_read
+          }));
+
+          saveState();
+          return;
+        }
+
+        // Sinon, chercher le contact par son nom
+        const recipientName = conv.members.find(m => m !== state.me.username);
+        if (!recipientName) return;
+
+        // Récupérer l'ID du contact
+        const contactsRes = await fetch('http://localhost:3000/api/messages/contacts', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!contactsRes.ok) return;
+
+        const contacts = await contactsRes.json();
+        const recipient = contacts.find(c => c.username === recipientName);
+
+        if (!recipient) return;
+
+        // Stocker le contactId pour les appels futurs
+        conv.contactId = recipient.id;
+
+        // Récupérer les messages
+        const messagesRes = await fetch(`http://localhost:3000/api/messages/${recipient.id}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!messagesRes.ok) return;
+
+        const messages = await messagesRes.json();
+        
+        // Convertir les messages de la DB au format de l'app
+        conv.messages = messages.map(msg => ({
+          id: msg.id,
+          author: msg.sender_id === state.me.id ? state.me.username : recipientName,
+          authorId: msg.sender_id,
+          text: msg.text,
+          ts: new Date(msg.created_at).getTime(),
+          reactions: {},
+          read: msg.is_read
+        }));
+
+        saveState();
+      } catch (error) {
+        console.error('Erreur chargement messages DB:', error);
+      }
     }
 
     function renderSidebar() {
@@ -1359,13 +1466,67 @@
       area.scrollTop = area.scrollHeight;
     }
 
-    function sendMessage() {
+    async function sendMessage() {
       const text = document.getElementById('messageInput').value.trim();
-      if (!text && !currentConvId) return;
+      if (!text || !currentConvId) return;
 
       const conv = state.conversations.find(c => c.id === currentConvId);
       if (!conv) return;
 
+      // Pour les conversations privées, envoyer via l'API
+      if (conv.type === 'private') {
+        const recipientName = conv.members.find(m => m !== state.me.username);
+        if (!recipientName) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+          // Chercher l'ID de l'utilisateur par son username
+          const contactsRes = await fetch('http://localhost:3000/api/messages/contacts', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          
+          if (!contactsRes.ok) {
+            console.error('Erreur lors de la récupération des contacts');
+            return;
+          }
+
+          const contacts = await contactsRes.json();
+          const recipient = contacts.find(c => c.username === recipientName);
+
+          if (!recipient) {
+            alert('Destinataire non trouvé dans les contacts');
+            return;
+          }
+
+          // Envoyer le message via l'API
+          const sendRes = await fetch('http://localhost:3000/api/messages/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              recipientId: recipient.id,
+              text: text,
+              fileUrl: null
+            })
+          });
+
+          if (!sendRes.ok) {
+            console.error('Erreur envoi message:', sendRes.status);
+            alert('Erreur lors de l\'envoi du message');
+            return;
+          }
+        } catch (error) {
+          console.error('Erreur envoi message:', error);
+          alert('Erreur réseau lors de l\'envoi du message');
+          return;
+        }
+      }
+
+      // Pour toutes les conversations (privées, groupes, threads), ajouter localement
       conv.messages.push({
         id: uid(),
         author: state.me.username,
@@ -1516,9 +1677,52 @@
       document.getElementById('groupForm').style.display = type === 'group' ? 'block' : 'none';
       document.getElementById('threadForm').style.display = type === 'thread' ? 'block' : 'none';
 
-      if (type === 'group') {
+      if (type === 'private') {
+        filterPrivateFriends();
+      } else if (type === 'group') {
         renderGroupFriendSuggestions();
       }
+    }
+
+    function filterPrivateFriends() {
+      const input = document.getElementById('privateName');
+      const container = document.getElementById('privateFriendsSuggestions');
+      if (!container || !input) return;
+
+      const query = (input.value || '').toLowerCase().trim();
+      container.innerHTML = '';
+
+      if (!friendsForMessaging || friendsForMessaging.length === 0) {
+        container.innerHTML = '<span style="font-size:11px; color: var(--muted);">Aucun ami trouvé.</span>';
+        return;
+      }
+
+      // Filtrer les amis selon la recherche
+      const filtered = friendsForMessaging.filter(friend => {
+        const name = getFriendDisplayName(friend).toLowerCase();
+        const email = (friend.email || '').toLowerCase();
+        if (!query) return true;
+        return name.includes(query) || email.includes(query);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<span style="font-size:11px; color: var(--muted);">Aucun ami ne correspond.</span>';
+        return;
+      }
+
+      // Afficher les suggestions
+      filtered.forEach(friend => {
+        const name = getFriendDisplayName(friend);
+        const chip = document.createElement('div');
+        chip.className = 'friend-chip';
+        chip.textContent = name;
+        chip.style.cursor = 'pointer';
+        chip.onclick = () => {
+          input.value = name;
+          filterPrivateFriends();
+        };
+        container.appendChild(chip);
+      });
     }
 
     function toggleInfo() {
@@ -1631,7 +1835,7 @@
     }
 
     function goBack() {
-      window.location.href = '../index.html';
+      window.location.href = '../../index.html';
     }
 
     function handleFileUpload() {
@@ -1799,6 +2003,8 @@
           : state.me.username;
       }
       
+      // Charger les conversations depuis la DB
+      loadConversationsFromDB();
       renderSidebar();
 
       // Search
@@ -1817,29 +2023,47 @@
 
       // Charger les amis réels pour la création / gestion de groupes
       loadFriendsForMessaging();
+    }
 
-      // Seed demo data
-      if (state.conversations.length === 0) {
-        state.conversations.push({
-          id: uid(),
-          type: 'private',
-          title: 'Alice',
-          members: [state.me.username, 'Alice'],
-          messages: [
-            {
-              id: uid(),
-              author: 'Alice',
-              authorId: 'alice123',
-              text: 'Salut! Comment tu vas?',
-              ts: Date.now() - 3600000,
-              reactions: { '👍': 2 }
-            }
-          ],
-          createdAt: Date.now() - 86400000,
-          unread: 1
+    async function loadConversationsFromDB() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        // Récupérer toutes les conversations de l'utilisateur
+        const convRes = await fetch('http://localhost:3000/api/messages/conversations', {
+          headers: { 'Authorization': 'Bearer ' + token }
         });
+
+        if (!convRes.ok) {
+          console.warn('Impossible de charger les conversations depuis la DB');
+          return;
+        }
+
+        const conversations = await convRes.json();
+        
+        // Convertir les conversations de la DB au format de l'app
+        const dbConversations = conversations.map(conv => ({
+          id: 'db_' + conv.other_user_id,
+          type: 'private',
+          title: conv.username,
+          members: [state.me.username, conv.username],
+          avatar: conv.avatarurl,
+          messages: [],
+          createdAt: Date.now(),
+          unread: conv.unread_count || 0,
+          lastMessage: conv.last_message,
+          lastMessageTime: conv.last_message_time,
+          contactId: conv.other_user_id // Stocker l'ID du contact pour les requêtes futures
+        }));
+
+        // Fusionner avec les conversations existantes (garder les groupes locaux)
+        const localConvs = state.conversations.filter(c => c.type !== 'private');
+        state.conversations = [...dbConversations, ...localConvs];
         saveState();
         renderSidebar();
+      } catch (error) {
+        console.error('Erreur chargement conversations DB:', error);
       }
     }
 
