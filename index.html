@@ -41,7 +41,7 @@
             </div>
             <div class="nav-actions">
                 <!-- Ces boutons sont masqués si déconnecté, sinon on garde la nav -->
-                <button class="btn" id="notifyBtn">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
+                <button class="btn" id="notifyBtn" onclick="toggleNotifications()">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
                 <button class="btn" id="newPostBtn">➕ Nouveau</button>
                 <button class="btn" id="logoutBtn" onclick="logout()">🚪 Déconnexion</button>
             </div>
@@ -241,6 +241,15 @@
         </div>
     </div>
 
+    <!-- NOTIFICATIONS PANEL -->
+    <div id="notificationsPanel" style="display:none; position:fixed; top:60px; right:20px; width:350px; background:#1a2332; border:1px solid rgba(255,255,255,0.1); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:999; max-height:400px; overflow-y:auto;">
+        <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin:0; font-size:14px; color:#e6eef8;">🔔 Notifications</h3>
+        </div>
+        <div id="notificationsContent" style="padding:8px;">
+            <div style="text-align:center; color:var(--muted); padding:20px;">Aucune notification</div>
+        </div>
+    </div>
 
     <script>
         // =======================
@@ -403,6 +412,11 @@ window.goToProfile = function() {
 
                     // Synchroniser les statistiques d'amis avec l'API
                     loadFriendsStats();
+                    
+                    // Charger les notifications
+                    loadNotifications();
+                    // Actualiser toutes les 30 secondes
+                    notificationsInterval = setInterval(loadNotifications, 30000);
 
                 } catch (e) {
                     console.error("Erreur parsing user:", e);
@@ -509,6 +523,9 @@ window.goToProfile = function() {
          * Après la déconnexion, on retourne sur la page login.html.
          */
         window.logout = function() {
+            // Arrêter le chargement automatique des notifications
+            if (notificationsInterval) clearInterval(notificationsInterval);
+            
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = 'login.html';
@@ -668,13 +685,16 @@ window.goToProfile = function() {
             });
         }
 
-        function renderFeed(filter=""){ 
+        async function renderFeed(filter=""){ 
             feedEl.innerHTML='';
             let posts = localState.posts.slice().sort((a,b)=>b.ts-a.ts);
             if(filter) posts = posts.filter(p=>p.text.toLowerCase().includes(filter) || (p.authorName && p.authorName.toLowerCase().includes(filter)));
             if(posts.length===0){ document.getElementById('emptyFeed').style.display='block'; return } else document.getElementById('emptyFeed').style.display='none';
-            posts.forEach(p=>{
-                const el = document.createElement('article'); el.className='post';
+            
+            for (const p of posts) {
+                const el = document.createElement('article'); 
+                el.className='post';
+                el.id = `post-${p.id}`;
                 const imageSrc = p.imageUrl || p.imageData;
                 const imageHtml = imageSrc ? `<div class="post-image"><img src="${escapeHtml(imageSrc)}" alt="Photo publiée" loading="lazy" /></div>` : '';
                 el.innerHTML = `
@@ -683,15 +703,70 @@ window.goToProfile = function() {
                     <div class="content">${linkify(escapeHtml(p.text))}</div>
                     ${imageHtml}
                     <div class="actions small">
-                        <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
-                        <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
+                        <button class="btn" id="like-btn-${p.id}" onclick='toggleLikeAPI("${p.id}")'>❤ <span id="like-count-${p.id}">${p.likes||0}</span></button>
+                        <button class="btn" onclick='openCommentsAPI("${p.id}")'>💬 <span id="comment-count-${p.id}">${p.comments?.length||0}</span></button>
                         <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
                         <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
                     </div>
-                    <div id="comments-${p.id}" style="margin-top:8px;display:none"></div>
+                    <div id="comments-${p.id}" style="margin-top:8px;display:none">
+                        <div id="comments-list-${p.id}" style="max-height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+                        <div style="display:flex;gap:6px;">
+                            <input type="text" id="cinput-${p.id}" class="comment-input" placeholder="Ajouter un commentaire..." style="flex:1;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:12px;">
+                            <button class="btn" onclick='addCommentAPI("${p.id}")' style="padding:6px 12px;font-size:12px;">Envoyer</button>
+                        </div>
+                    </div>
                 `;
                 feedEl.appendChild(el);
-            });
+                
+                // Charger les likes et commentaires depuis l'API
+                await loadPostInteractions(p.id);
+            }
+        }
+        
+        async function loadPostInteractions(postId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                // Charger les likes
+                const likesRes = await fetch(`${API_BASE_URL}/posts/interactions/${postId}/likes`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (likesRes.ok) {
+                    const likes = await likesRes.json();
+                    const likeCountEl = document.getElementById(`like-count-${postId}`);
+                    if (likeCountEl) likeCountEl.textContent = likes.length;
+                    
+                    // Vérifier si l'utilisateur a aimé ce post
+                    const userLiked = likes.some(l => l.user_id === currentUser.id);
+                    const likeBtnEl = document.getElementById(`like-btn-${postId}`);
+                    if (likeBtnEl) likeBtnEl.style.color = userLiked ? '#ff1744' : 'inherit';
+                }
+
+                // Charger les commentaires
+                const commentsRes = await fetch(`${API_BASE_URL}/posts/interactions/${postId}/comments`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (commentsRes.ok) {
+                    const comments = await commentsRes.json();
+                    const commentCountEl = document.getElementById(`comment-count-${postId}`);
+                    if (commentCountEl) commentCountEl.textContent = comments.length;
+                    
+                    const commentListEl = document.getElementById(`comments-list-${postId}`);
+                    if (commentListEl) {
+                        commentListEl.innerHTML = comments.map(c => `
+                            <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-bottom:6px;font-size:12px;">
+                                <strong>${escapeHtml(c.username)}</strong>
+                                <div>${escapeHtml(c.content)}</div>
+                                <div style="color:#999;font-size:10px;margin-top:4px;">${new Date(c.created_at).toLocaleString()}</div>
+                                ${c.user_id === currentUser.id ? `<button class="btn" onclick='deleteCommentAPI(${c.id})' style="padding:2px 6px;font-size:10px;margin-top:4px;">Supprimer</button>` : ''}
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur chargement interactions:', error);
+            }
         }
         
         publishBtn.addEventListener('click', async ()=>{
@@ -808,16 +883,117 @@ window.goToProfile = function() {
         
         function renderSuggestions(){ 
             suggestionsEl.innerHTML='';
-            const pool=['Alice','Bob','Carole','Denis','Eva','Franck'];
-            pool.forEach(name=>{
-                const id=name.toLowerCase();
-                const row=document.createElement('div');
-                row.className='follow-row';
-                row.innerHTML=`<div><strong>${name}</strong><div class="muted">@${id}</div></div><div><button class="btn" onclick='follow("${name}")'>Suivre</button></div>`;
-                suggestionsEl.appendChild(row);
+            
+            // Charger les amis depuis l'API
+            const token = localStorage.getItem('token');
+            if (!token) {
+                suggestionsEl.innerHTML = '<div class="muted" style="padding:10px;">Connectez-vous pour voir les suggestions d\'amis</div>';
+                return;
+            }
+
+            // Récupérer TOUS les utilisateurs ET les amis actuels
+            Promise.all([
+                fetch('http://localhost:3000/api/ami', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }).then(res => res.json()),
+                fetch('http://localhost:3000/api/ami/friends', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }).then(res => res.json())
+            ])
+            .then(([allUsers, myFriends]) => {
+                if (!Array.isArray(allUsers) || allUsers.length === 0) {
+                    suggestionsEl.innerHTML = '<div class="muted" style="padding:10px;">Aucun utilisateur disponible</div>';
+                    return;
+                }
+
+                // Créer un Set des IDs des amis actuels pour filtrer rapidement
+                const friendIds = new Set((myFriends || []).map(f => f.id));
+                
+                // Filtrer pour ne garder que les utilisateurs qui NE sont PAS des amis
+                const suggestions = allUsers.filter(user => !friendIds.has(user.id));
+
+                if (suggestions.length === 0) {
+                    suggestionsEl.innerHTML = '<div class="muted" style="padding:10px;">Vous êtes déjà ami(e) avec tout le monde!</div>';
+                    return;
+                }
+
+                // Afficher les suggestions (utilisateurs non amis)
+                suggestions.slice(0, 6).forEach(user => {
+                    const displayName = user.first_name && user.last_name 
+                        ? `${user.first_name} ${user.last_name}` 
+                        : user.username || 'Utilisateur';
+                    
+                    const row = document.createElement('div');
+                    row.className = 'follow-row';
+                    row.innerHTML = `
+                        <div>
+                            <strong>${displayName}</strong>
+                            <div class="muted">@${user.username || 'user'}</div>
+                        </div>
+                        <div>
+                            <button class="btn" onclick='follow("${displayName}", "${user.id}")'>Ajouter</button>
+                        </div>
+                    `;
+                    suggestionsEl.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Erreur chargement suggestions:', error);
+                suggestionsEl.innerHTML = '<div class="muted" style="padding:10px;">Erreur de chargement</div>';
             });
         }
-        function follow(name){ if (!is_authenticated) return showAuthView('login'); if(localState.friends.includes(name)){ showMessage('Déjà suivi'); return } localState.friends.push(name); save(); renderSuggestions(); showMessage('Nouvel ami: '+name, 'success'); }
+        async function follow(name, userId){ 
+            if (!is_authenticated) return showAuthView('login'); 
+            
+            // Vérifier si déjà ami (dans la vraie liste)
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showAuthView('login');
+                return;
+            }
+            
+            try {
+                // Vérifier si déjà ami via l'API
+                const friendsRes = await fetch('http://localhost:3000/api/ami/friends', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                if (!friendsRes.ok) {
+                    showMessage('Erreur de connexion', 'danger');
+                    return;
+                }
+                
+                const friends = await friendsRes.json();
+                if (friends.some(f => f.id === userId)) {
+                    showMessage('Déjà ami(e)', 'warning');
+                    return;
+                }
+                
+                // Envoyer la demande d'ami via l'API
+                const addRes = await fetch('http://localhost:3000/api/ami/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ toId: userId })
+                });
+                
+                if (!addRes.ok) {
+                    showMessage('Erreur lors de l\'ajout', 'danger');
+                    console.error('Erreur API:', addRes.status);
+                    return;
+                }
+                
+                showMessage('Demande d\'ami envoyée! 📤', 'success'); 
+                
+                // Recharger les suggestions après un délai
+                setTimeout(() => renderSuggestions(), 500);
+            } catch (error) {
+                console.error('Erreur:', error);
+                showMessage('Erreur réseau', 'danger');
+            }
+        }
         function seedSample(){ const samples=[{text:'Bienvenue sur MiniRéseau ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},{text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},{text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}]; samples.forEach(s=>{ localState.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
         function clearAll(){ if(!confirm('Tout réinitialiser (stockage local des posts/amis) ?')) return; localStorage.removeItem(STORAGE_KEY); localState={posts:[],friends:[],notifications:[]}; save(); renderFeed(); }
 
@@ -826,7 +1002,10 @@ window.goToProfile = function() {
         // Charger le fil d'actualité depuis l'API backend
         async function loadFeedFromAPI() {
             try {
-                const response = await fetch(`${API_BASE_URL}/posts/timeline`);
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/posts/timeline`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!response.ok) {
                     console.error('Erreur chargement posts:', response.status);
                     return;
@@ -947,6 +1126,120 @@ window.goToProfile = function() {
                     feedEl.appendChild(el);
                 });
         }
+
+        // =======================
+        // NOTIFICATIONS
+        // =======================
+        let notificationsInterval = null;
+
+        async function loadNotifications() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('http://localhost:3000/api/notifications', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                if (!res.ok) return;
+                
+                const notifications = await res.json();
+                
+                // Mettre à jour le compteur
+                document.getElementById('notifCount').textContent = notifications.length;
+                
+                // Afficher le panneau avec les notifications
+                const content = document.getElementById('notificationsContent');
+                if (notifications.length === 0) {
+                    content.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">✅ Aucune nouvelle notification</div>';
+                    return;
+                }
+                
+                content.innerHTML = notifications.map(notif => {
+                    const displayName = notif.first_name && notif.last_name 
+                        ? `${notif.first_name} ${notif.last_name}` 
+                        : notif.username;
+                    
+                    if (notif.type === 'friend_request') {
+                        return `
+                            <div style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(11,132,255,0.1);">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                    <div style="width:32px; height:32px; border-radius:50%; background:${notif.avatarurl || 'linear-gradient(135deg, #0b84ff, #00d4ff)'}; background-size:cover;"></div>
+                                    <div>
+                                        <strong style="color:#e6eef8; font-size:13px;">${displayName}</strong>
+                                        <div style="font-size:11px; color:var(--muted);">veut être ton ami</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn" onclick="acceptFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px;">✅ Accepter</button>
+                                    <button class="btn" onclick="rejectFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px;">❌ Refuser</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return '';
+                }).join('');
+            } catch (error) {
+                console.error('Erreur chargement notifications:', error);
+            }
+        }
+
+        async function acceptFriendRequest(friendshipId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('http://localhost:3000/api/notifications/accept', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ friendshipId })
+                });
+
+                if (res.ok) {
+                    showMessage('Demande d\'ami acceptée! 🎉', 'success');
+                    loadNotifications();
+                    renderSuggestions();
+                    setTimeout(() => loadFeedFromAPI(), 500);
+                }
+            } catch (error) {
+                console.error('Erreur acceptation demande:', error);
+            }
+        }
+
+        async function rejectFriendRequest(friendshipId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('http://localhost:3000/api/notifications/reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ friendshipId })
+                });
+
+                if (res.ok) {
+                    showMessage('Demande refusée.', 'info');
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Erreur refus demande:', error);
+            }
+        }
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') {
+                loadNotifications();
+            }
+        }
+
         // =======================
         // INITIALISATION
         // =======================
@@ -960,7 +1253,16 @@ window.goToProfile = function() {
             document.getElementById('register-form').addEventListener('submit', handleRegister);
             document.getElementById('login-form').addEventListener('submit', handleLogin);
 
-            // 3. Vérifier l'état de l'authentification et mettre à jour l'UI
+            // 3. Fermer le panneau de notifications au clic ailleurs
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('notificationsPanel');
+                const notifyBtn = document.getElementById('notifyBtn');
+                if (!panel.contains(e.target) && !notifyBtn.contains(e.target)) {
+                    panel.style.display = 'none';
+                }
+            });
+
+            // 4. Vérifier l'état de l'authentification et mettre à jour l'UI
             updateUI();
         });
     </script>
