@@ -31,6 +31,30 @@ function logout() {
     window.location.href = "login.html";
 }
 
+// ======= ROLE GUARD (FRONT) =======
+// Utilitaire pour les pages dédiées :
+//   const user = requireRole('enseignant');
+//   const user = requireRole(['personnel', 'enseignant']);
+// Si l'utilisateur n'est pas connecté -> redirection login.
+// Si le rôle ne correspond pas -> redirection vers index (vue étudiante par défaut).
+function requireRole(allowedRoles) {
+    const session = getSession();
+    const user = session ? session.user : null;
+
+    if (!user) {
+        window.location.href = "login.html";
+        return null;
+    }
+
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    if (!roles.includes(user.role)) {
+        window.location.href = "index.html";
+        return null;
+    }
+
+    return user;
+}
+
 // ======= SWITCH FORM (identique) =======
 function switchForm(type) {
     // ... (Logique pour afficher/masquer loginForm et registerForm) ...
@@ -56,6 +80,14 @@ async function register() {
     const username = document.getElementById("regName").value.trim() + " " + document.getElementById("regPrenom").value.trim();
     const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const password = document.getElementById("regPassword").value.trim();
+    const role = (document.getElementById("regRole")?.value || "eleve").toLowerCase();
+    let classe = "";
+    if (role === "eleve") {
+        classe = (document.getElementById("regClasse")?.value || "").trim();
+        if (!classe) {
+            return alert("Veuillez renseigner votre classe (ex: L3 INFO A)");
+        }
+    }
 
     if (!username || !email || !password) {
         return alert("Remplissez tous les champs");
@@ -65,7 +97,7 @@ async function register() {
         const res = await fetch(`${API_URL}/register`, { 
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password })
+            body: JSON.stringify({ username, email, password, role, classe })
         });
 
         const data = await res.json();
@@ -95,10 +127,33 @@ async function login() {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erreur connexion");
-        
-        setSession(data); // Stocke { user, token }
-        
-        window.location.href = "index.html";
+
+        // Stocker la session complète (utilisé par d'autres pages)
+        setSession(data); // { user, token }
+
+        // Aligner avec l'index qui attend localStorage.token / localStorage.user
+        try {
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+            if (data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+            }
+        } catch (e) {
+            console.warn('Stockage local token/user échoué:', e);
+        }
+
+        // Redirection en fonction du rôle
+        const role = (data.user && data.user.role) ? data.user.role : 'eleve';
+        let target = "index.html"; // Vue principale pour les étudiants
+
+        if (role === 'enseignant') {
+            target = "dashboard-enseignant.html";
+        } else if (role === 'personnel') {
+            target = "dashboard-personnel.html";
+        }
+
+        window.location.href = target;
     } catch (err) {
         alert(err.message);
     }
@@ -124,3 +179,4 @@ window.protectPage = protectPage;
 window.getCurrentUser = getCurrentUser;
 window.getToken = getToken; // Pour le ProfileManager
 window.getUserId = getUserId; // Pour le ProfileManager
+window.requireRole = requireRole;

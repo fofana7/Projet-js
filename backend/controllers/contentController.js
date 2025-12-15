@@ -122,3 +122,35 @@ exports.votePoll = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur', details: err.message });
   }
 };
+
+// Ressources pour enseignants
+exports.createResource = async (req, res) => {
+  const { title, url, description } = req.body;
+  if (!title || !url) return res.status(400).json({ error: 'title and url required' });
+  try {
+    const result = await pool.query(
+      'INSERT INTO docs (title, url, description, uploader, created_at) VALUES ($1,$2,$3,$4,NOW()) RETURNING *',
+      [title, url, description || null, req.user.id]
+    );
+    res.status(201).json({ resource: result.rows[0] });
+  } catch (err) {
+    console.error('CREATE RESOURCE ERROR', err);
+    res.status(500).json({ error: 'Erreur serveur', details: err.message });
+  }
+};
+
+// Infos de classe pour enseignants
+exports.createClassInfo = async (req, res) => {
+  const { title, content, class_name } = req.body;
+  if (!title || !content) return res.status(400).json({ error: 'title and content required' });
+  try {
+    const result = await pool.query(
+      'INSERT INTO announcements (title, content, author, created_at) VALUES ($1,$2,$3,NOW()) RETURNING *',
+      [title, content, class_name || 'Classe']
+    );
+    res.status(201).json({ classInfo: result.rows[0] });
+  } catch (err) {
+    console.error('CREATE CLASS INFO ERROR', err);
+    res.status(500).json({ error: 'Erreur serveur', details: err.message });
+  }
+};

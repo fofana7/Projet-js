@@ -7,7 +7,9 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const popup = document.getElementById('popup');
 
-let friends = [];
+const API_BASE = 'http://localhost:3000/api';
+
+let currentUser = null; // utilisateur connecté (centre de la constellation)
 let nodes = [];
 let animationId;
 
@@ -24,19 +26,26 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 // ========================================
-// FETCH FRIENDS FROM API
+// FETCH FRIENDS FROM API (synchronisé avec /api/ami)
 // ========================================
 
-async function fetchFriends() {
+let friends = [];
+let friendships = [];
+
+async function fetchConstellation() {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn('No token found. Redirecting to login...');
+    const userStr = localStorage.getItem('user');
+
+    if (!token || !userStr) {
+      console.warn('No session found. Redirecting to login...');
       window.location.href = 'login.html';
       return;
     }
 
-    const response = await fetch('http://localhost:3000/api/ami', {
+    currentUser = JSON.parse(userStr);
+
+    const response = await fetch(`${API_BASE}/constellation`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -47,13 +56,17 @@ async function fetchFriends() {
     }
 
     const data = await response.json();
-    friends = Array.isArray(data) ? data : [];
-    
-    console.log(`✓ Loaded ${friends.length} friends`);
+
+    currentUser = data.me || currentUser;
+    friends = Array.isArray(data.friends) ? data.friends : [];
+    friendships = Array.isArray(data.friendships) ? data.friendships : [];
+
+    console.log(`✓ Loaded ${friends.length} friends for constellation`);
     initializeConstellation();
   } catch (error) {
-    console.error('Failed to fetch friends:', error);
+    console.error('Failed to fetch constellation:', error);
     friends = [];
+    friendships = [];
     initializeConstellation();
   }
 }
@@ -64,45 +77,59 @@ async function fetchFriends() {
 
 function initializeConstellation() {
   nodes = [];
-  
-  // User is at center
-  nodes.push({
-    id: 'user',
-    name: 'You',
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+  if (!currentUser) return;
+
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  // Noeud central: l'utilisateur connecté
+  const meDisplayName = currentUser.username || currentUser.first_name || 'Moi';
+  const meNode = {
+    id: currentUser.id,
+    name: meDisplayName,
+    x: centerX,
+    y: centerY,
     vx: 0,
     vy: 0,
-    size: 8,
-    color: '#ffd700',
+    size: 10,
+    color: '#ffffff',
     isUser: true,
-    data: null
-  });
+    data: currentUser
+  };
+  nodes.push(meNode);
 
-  // Position friends in orbital pattern
+  if (!friends || friends.length === 0) {
+    animate();
+    return;
+  }
+
+  // Positionner les amis sur un cercle autour de l'utilisateur
   const count = friends.length;
   const baseRadius = Math.min(canvas.width, canvas.height) / 3;
-  
-  friends.forEach((friend, index) => {
-    const angle = (index / count) * Math.PI * 2 + Math.random() * 0.3;
-    const distance = baseRadius + Math.random() * 100;
-    
-    const node = {
-      id: friend.id || index,
-      name: friend.username || `Friend ${index + 1}`,
-      x: canvas.width / 2 + Math.cos(angle) * distance,
-      y: canvas.height / 2 + Math.sin(angle) * distance,
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 1.2,
-      size: 5,
-      color: generateColorFromName(friend.username || `Friend ${index + 1}`),
+
+  friends.forEach((user, index) => {
+    const angle = (index / count) * Math.PI * 2;
+    const distance = baseRadius + Math.random() * 60;
+
+    const displayName =
+      (user.first_name && user.last_name)
+        ? `${user.first_name} ${user.last_name}`
+        : (user.first_name || user.username || 'Ami');
+
+    nodes.push({
+      id: user.id,
+      name: displayName,
+      x: centerX + Math.cos(angle) * distance,
+      y: centerY + Math.sin(angle) * distance,
+      vx: 0,
+      vy: 0,
+      size: 7,
+      color: generateColorFromName(displayName),
       isUser: false,
-      data: friend,
-      angle: angle,
-      distance: distance
-    };
-    
-    nodes.push(node);
+      data: user,
+      angle,
+      distance
+    });
   });
 
   animate();
@@ -186,54 +213,74 @@ function updatePhysics() {
 }
 
 function drawConnections() {
-  ctx.strokeStyle = 'rgba(147, 197, 253, 0.2)';
-  ctx.lineWidth = 0.8;
-
-  const userNode = nodes[0];
-  
-  nodes.forEach((node, i) => {
-    if (i === 0) return; // Skip user
-
-    ctx.beginPath();
-    ctx.moveTo(userNode.x, userNode.y);
-    ctx.lineTo(node.x, node.y);
-    ctx.stroke();
-
-    // Draw connections between friends (optional - creates web)
-    if (Math.random() < 0.05) { // 5% chance per pair
-      nodes.forEach((other, j) => {
-        if (j <= i) return;
-        
-        const distance = Math.hypot(node.x - other.x, node.y - other.y);
-        if (distance < 150) {
-          ctx.strokeStyle = `rgba(147, 197, 253, ${0.1 * (1 - distance / 150)})`;
-          ctx.beginPath();
-          ctx.moveTo(node.x, node.y);
-          ctx.lineTo(other.x, other.y);
-          ctx.stroke();
-        }
-      });
+  ctx.save();
+  // Traînées lumineuses animées
+  const t = Date.now() / 800;
+  friendships.forEach(f => {
+    const n1 = nodes.find(n => n.id === f.user_id_1);
+    const n2 = nodes.find(n => n.id === f.user_id_2);
+    if (n1 && n2) {
+      // Animation de traînée
+      for (let i = 0; i < 12; i++) {
+        const p = i / 12;
+        const x = n1.x + (n2.x - n1.x) * p;
+        const y = n1.y + (n2.y - n1.y) * p;
+        const alpha = 0.18 + 0.12 * Math.sin(t + p * 6);
+        ctx.beginPath();
+        ctx.arc(x, y, 2 + 2 * Math.sin(t + p * 8), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(147,197,253,${alpha})`;
+        ctx.fill();
+      }
+      // Lien principal
+      ctx.strokeStyle = 'rgba(147, 197, 253, 0.22)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(n1.x, n1.y);
+      ctx.lineTo(n2.x, n2.y);
+      ctx.stroke();
     }
   });
+  ctx.restore();
 }
 
 function drawNodes() {
   nodes.forEach((node) => {
-    // Draw glow
-    const glowGradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.size * 3);
-    glowGradient.addColorStop(0, node.color + '40');
+    // Pulsation lumineuse selon le nombre d'amis
+    let pulse = 1;
+    if (node.id) {
+      const friendCount = friendships.filter(f => f.user_id_1 === node.id || f.user_id_2 === node.id).length;
+      pulse = 1 + 0.5 * Math.sin(Date.now() / 400 + node.id) * (friendCount / 6);
+    }
+
+    // Glow cosmique
+    const glowGradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.size * 3 * pulse);
+    glowGradient.addColorStop(0, node.color + '55');
     glowGradient.addColorStop(1, node.color + '00');
-    
     ctx.fillStyle = glowGradient;
     ctx.beginPath();
-    ctx.arc(node.x, node.y, node.size * 3, 0, Math.PI * 2);
+    ctx.arc(node.x, node.y, node.size * 3 * pulse, 0, Math.PI * 2);
     ctx.fill();
 
+    // Halo pour les groupes d'amis (si >3 liens)
+    if (node.id && friendships.filter(f => f.user_id_1 === node.id || f.user_id_2 === node.id).length > 3) {
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.size * 7 * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = '#aaf6ff';
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Draw node
+    ctx.save();
+    ctx.shadowColor = node.color;
+    ctx.shadowBlur = 18 * pulse;
     ctx.fillStyle = node.color;
     ctx.beginPath();
-    ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+    ctx.arc(node.x, node.y, node.size * pulse, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
 
     // Draw border
     ctx.strokeStyle = node.isUser ? '#fff' : node.color;
@@ -252,7 +299,6 @@ canvas.addEventListener('mousemove', (e) => {
   const mouseY = e.clientY - rect.top;
 
   let hoveredNode = null;
-
   nodes.forEach((node) => {
     const distance = Math.hypot(node.x - mouseX, node.y - mouseY);
     if (distance < node.size + 15) {
@@ -270,7 +316,7 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 function showPopup(node, x, y) {
-  popup.textContent = node.name;
+  popup.innerHTML = `<strong>${node.name}</strong><br>${node.data && node.data.bio ? node.data.bio : ''}`;
   popup.style.left = x + 'px';
   popup.style.top = y + 'px';
   popup.style.display = 'block';
@@ -284,14 +330,44 @@ canvas.addEventListener('click', (e) => {
 
   nodes.forEach((node) => {
     const distance = Math.hypot(node.x - mouseX, node.y - mouseY);
-    if (distance < node.size + 15 && !node.isUser && node.data) {
-      // Open user profile or friend details
-      console.log('Clicked friend:', node.data);
-      // You can add profile modal or navigate to friend profile here
-      alert(`👤 ${node.data.username}\nID: ${node.data.id}`);
+    if (distance < node.size + 15 && node.data) {
+      // Affiche un profil détaillé + supernova
+      showProfileModal(node);
+      animateSupernova(node.x, node.y, node.color);
     }
   });
 });
+
+function showProfileModal(node) {
+  const u = node.data || {};
+  const fullName =
+    (u.first_name && u.last_name)
+      ? `${u.first_name} ${u.last_name}`
+      : (u.first_name || u.username || node.name || 'Ami');
+
+  const bio = u.bio || 'Aucune bio renseignée pour le moment.';
+
+  alert(`👤 ${fullName}\n\n${bio}`);
+}
+
+function animateSupernova(x, y, color) {
+  let frame = 0;
+  function draw() {
+    if (frame > 22) return;
+    ctx.save();
+    ctx.globalAlpha = 0.18 - frame * 0.007;
+    ctx.beginPath();
+    ctx.arc(x, y, 18 + frame * 6, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 40 - frame * 1.5;
+    ctx.fill();
+    ctx.restore();
+    frame++;
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
 
 // ========================================
 // ANIMATION LOOP
@@ -312,4 +388,4 @@ function animate() {
 // INIT
 // ========================================
 
-fetchFriends();
+fetchConstellation();

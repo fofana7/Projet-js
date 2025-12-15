@@ -14,13 +14,30 @@ const isStudentEmail = (email) => {
 // REGISTER
 // =====================
 exports.register = async (req, res) => {
-    let { username, email, password } = req.body;
+    let { username, email, password, role, classe } = req.body;
 
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
     email = email.trim().toLowerCase();
+
+    // Normaliser le rôle
+    role = (role || 'eleve').toLowerCase();
+    const allowedRoles = ['eleve', 'enseignant', 'personnel'];
+    if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ error: 'Rôle invalide' });
+    }
+
+    if (role === 'eleve') {
+        if (!classe || !classe.trim()) {
+            return res.status(400).json({ error: 'La classe est requise pour les étudiants' });
+        }
+        classe = classe.trim();
+    } else {
+        // Pas de classe obligatoire pour enseignants/personnel
+        classe = classe && classe.trim() ? classe.trim() : null;
+    }
 
     if (!isStudentEmail(email)) {
         return res.status(403).json({ error: 'L\'inscription est réservée aux étudiants L\'esme.' });
@@ -30,8 +47,8 @@ exports.register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await pool.query(
-            'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
-            [username, email, hashedPassword]
+            'INSERT INTO users (username, email, password, role, classe) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, classe',
+            [username, email, hashedPassword, role, classe]
         );
 
         res.status(201).json({ message: 'Utilisateur créé', user: result.rows[0] });
@@ -68,7 +85,7 @@ exports.login = async (req, res) => {
         if (!match) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
         const token = jwt.sign(
-            { id: user.id, username: user.username, email: user.email },
+            { id: user.id, username: user.username, email: user.email, role: user.role, classe: user.classe },
             JWT_SECRET,
             { expiresIn: '1h' }
         );
@@ -76,7 +93,7 @@ exports.login = async (req, res) => {
         res.json({
             message: 'Connexion réussie',
             token: token,
-            user: { id: user.id, username: user.username, email: user.email }
+            user: { id: user.id, username: user.username, email: user.email, role: user.role, classe: user.classe }
         });
 
     } catch (err) {

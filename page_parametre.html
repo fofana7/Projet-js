@@ -11,6 +11,7 @@
       font-family: Arial, sans-serif;
       background: #accfdb;
       display: flex;
+      color: #111827;
     }
 
     /* SIDEBAR */
@@ -133,6 +134,7 @@
       border: 1px solid #ccc;
       border-radius: 10px;
       background: #fafafa;
+      color: inherit;
     }
 
     .save-btn {
@@ -349,6 +351,62 @@
   background: #3b44d1;
 }
 
+    /* === THÈME SOMBRE GLOBAL (appliqué via body.theme-dark) === */
+    body.theme-dark {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    body.theme-dark .sidebar {
+      background: #020617;
+      border-right-color: #1f2937;
+    }
+
+    body.theme-dark .sidebar-icon {
+      color: #e5e7eb;
+    }
+
+    body.theme-dark .main {
+      background: transparent;
+    }
+
+    body.theme-dark .menu,
+    body.theme-dark .content,
+    body.theme-dark #data-section {
+      background: #020617;
+      color: #e5e7eb;
+      box-shadow: 0 2px 18px rgba(15,23,42,0.8);
+      border: 1px solid #1f2937;
+    }
+
+    body.theme-dark .profile-box {
+      background: #0f172a;
+    }
+
+    body.theme-dark .field input,
+    body.theme-dark .field textarea,
+    body.theme-dark .field select {
+      background: #020617;
+      border-color: #1f2937;
+      color: #e5e7eb;
+    }
+
+    body.theme-dark .blocked-user,
+    body.theme-dark #personal-section ul li,
+    body.theme-dark .security-box,
+    body.theme-dark .privacy-box,
+    body.theme-dark .logout-box {
+      background: #020617;
+      border: 1px solid #1f2937;
+      box-shadow: 0 2px 14px rgba(15,23,42,0.7);
+    }
+
+    body.theme-dark .unblock-btn,
+    body.theme-dark .logout-btn,
+    body.theme-dark .save-btn {
+      box-shadow: 0 10px 25px rgba(15,23,42,0.8);
+    }
+
 
   </style>
 </head>
@@ -398,8 +456,8 @@
 
       <div class="profile-box">
         <div style="display:flex; align-items:center; gap:20px;">
-          <img class="profile-pic-small" src="https://i.pravatar.cc/200" />
-          <strong>Nom Utilisateur</strong>
+          <img id="settingsProfileAvatar" class="profile-pic-small" src="avatar-placeholder.png" />
+          <strong id="settingsProfileName">Nom utilisateur</strong>
         </div>
         <button class="btn-edit-photo">Modifier la photo</button>
       </div>
@@ -446,10 +504,10 @@
 
       <div class="field">
         <label>Thème</label>
-        <select>
-          <option>Mode clair</option>
-          <option>Mode sombre</option>
-          <option>Automatique</option>
+        <select id="themeSelect">
+          <option value="light">Mode clair</option>
+          <option value="dark">Mode sombre</option>
+          <option value="auto">Automatique</option>
         </select>
       </div>
 
@@ -488,7 +546,7 @@
         </select>
       </div>
 
-      <button class="save-btn">Enregistrer</button>
+      <button class="save-btn" id="save-profile-btn">Enregistrer</button>
     </div>
 
 <!-- Le reste du code reste inchangé (sections sécurité, bloqués, confidentialité, notifications, supprimer compte, télécharger données, infos personnelles) -->
@@ -623,13 +681,13 @@
 <div class="section" id="personal-section" style="display:none;">
   <h1>Informations personnelles</h1>
   <ul>
-    <li><strong>Nom complet :</strong> John Doe</li>
-    <li><strong>Email :</strong> john.doe@example.com</li>
+    <li><strong>Nom complet :</strong> <span id="personalFullName">John Doe</span></li>
+    <li><strong>Email :</strong> <span id="personalEmail">john.doe@example.com</span></li>
     <li><strong>Numéro de téléphone :</strong> +33 6 12 34 56 78</li>
     <li><strong>Adresse :</strong> 123 Rue Exemple, Paris, France</li>
     <li><strong>Date de naissance :</strong> 01/01/1990</li>
     <li><strong>Genre :</strong> Homme</li>
-    <li><strong>Classe :</strong> Ingé2</li>
+    <li><strong>Classe :</strong> <span id="personalClasse">Ingé2</span></li>
     <li><strong>Localisation :</strong> Paris, France</li>
   </ul>
 </div>
@@ -639,6 +697,74 @@
 </div>
 
 <script>
+  // ========== SESSION & UTILISATEUR COURANT ==========
+  const SETTINGS_API_BASE = window.location.origin;
+
+  async function loadSettingsUser() {
+    try {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      // Pas de session => retour à la page de connexion
+      if (!token || !storedUser) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      let user = null;
+      try {
+        user = JSON.parse(storedUser);
+      } catch {
+        user = null;
+      }
+
+      // Tentative de rafraîchir depuis l'API comme dans profil.html
+      try {
+        const res = await fetch(`${SETTINGS_API_BASE}/api/users/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.user) {
+            user = data.user;
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        }
+      } catch (e) {
+        console.log('API /api/users/me non disponible pour les paramètres, utilisation du localStorage.');
+      }
+
+      if (!user) return;
+
+      const name = user.username || 'Utilisateur';
+      const email = user.email || '';
+      const classe = user.classe || '';
+      const avatarLocal = localStorage.getItem('userAvatarLocal');
+      const avatarUrl = avatarLocal || user.avatarurl || 'https://i.pravatar.cc/200';
+
+      const nameEl = document.getElementById('settingsProfileName');
+      const avatarEl = document.getElementById('settingsProfileAvatar');
+      if (nameEl) nameEl.textContent = name;
+      if (avatarEl) avatarEl.src = avatarUrl;
+
+      const fullNameEl = document.getElementById('personalFullName');
+      const emailEl = document.getElementById('personalEmail');
+      const classeEl = document.getElementById('personalClasse');
+      if (fullNameEl) fullNameEl.textContent = name;
+      if (emailEl) emailEl.textContent = email;
+      if (classeEl && classe) classeEl.textContent = classe;
+    } catch (err) {
+      console.error('Erreur lors du chargement de l\'utilisateur paramètres :', err);
+    }
+  }
+
+  // Charger immédiatement les infos utilisateur pour les paramètres
+  loadSettingsUser();
+
   // ========== NAVIGATION SIDEBAR ==========
   document.querySelectorAll('.sidebar-icon').forEach((icon, index) => {
     icon.addEventListener('click', () => {
@@ -803,7 +929,7 @@
   saveBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       // Vérifier que ce n'est pas le bouton de mise à jour du mot de passe
-      if(btn.id !== 'update-password-btn') {
+      if(btn.id !== 'update-password-btn' && btn.id !== 'save-profile-btn') {
         alert("Vos modifications ont été enregistrées avec succès !");
       }
     });
@@ -820,6 +946,56 @@
       }
     });
   });
+
+  // ========== THÈME (clair / sombre / auto) ==========
+  const THEME_STORAGE_KEY = 'minireseau:theme';
+
+  function applyTheme(theme) {
+    const body = document.body;
+    body.classList.remove('theme-dark');
+
+    let effective = theme;
+    if (theme === 'auto') {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      effective = prefersDark ? 'dark' : 'light';
+    }
+
+    if (effective === 'dark') {
+      body.classList.add('theme-dark');
+    }
+  }
+
+  function initThemeFromStorage() {
+    const select = document.getElementById('themeSelect');
+    if (!select) return;
+
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+    if ([ 'light', 'dark', 'auto' ].includes(saved)) {
+      select.value = saved;
+    }
+    applyTheme(saved);
+  }
+
+  function handleProfileSave() {
+    const select = document.getElementById('themeSelect');
+    const chosen = select ? select.value : 'light';
+    localStorage.setItem(THEME_STORAGE_KEY, chosen);
+    applyTheme(chosen);
+
+    alert('Profil mis à jour et thème appliqué !');
+  }
+
+  // Bouton Enregistrer du bloc "Modifier le profil"
+  const profileSaveBtn = document.getElementById('save-profile-btn');
+  if (profileSaveBtn) {
+    profileSaveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleProfileSave();
+    });
+  }
+
+  // Initialiser le thème dès le chargement
+  initThemeFromStorage();
 
 </script>
 

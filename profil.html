@@ -593,6 +593,12 @@
                 const token = localStorage.getItem('token');
                 const storedUser = localStorage.getItem('user');
                 
+                // Si aucune session, on renvoie vers la page de connexion
+                if (!token || !storedUser) {
+                    window.location.href = 'login.html';
+                    return this.defaultProfile;
+                }
+
                 if (token && storedUser) {
                     const parsedUser = JSON.parse(storedUser);
                     // Essayer de récupérer depuis l'API
@@ -740,8 +746,46 @@
             this.elements.editPseudo.value = user.username || "";
             this.elements.editBio.value = user.bio || "";
             
-            // Rendu de la liste d'amis
+            // Rendu de la liste d'amis (sera écrasé par l'API si disponible)
             this.renderFriends(user.friends || []);
+
+            // Charger les amis réels depuis l'API /api/ami/friends
+            await this.loadFriendsFromAPI();
+        },
+
+        // Charge les amis depuis l'API d'amis pour synchroniser avec la base
+        async loadFriendsFromAPI() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const res = await fetch(`${API_BASE}/api/ami/friends`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!res.ok) return;
+
+                const friendsFromApi = await res.json();
+                if (!Array.isArray(friendsFromApi)) return;
+
+                // Transformer les amis en objets utilisables par le profil
+                const mapped = friendsFromApi.map(f => ({
+                    username: (f.first_name && f.last_name)
+                        ? `${f.first_name} ${f.last_name}`
+                        : (f.first_name || f.username || 'Étudiant'),
+                    avatar: `https://i.pravatar.cc/80?u=${encodeURIComponent(f.email || f.username || '')}`
+                }));
+
+                // Mettre à jour les stats et l'affichage
+                this.elements.friendsCount.textContent = mapped.length;
+                this.renderFriends(mapped);
+            } catch (e) {
+                console.log('Impossible de charger les amis depuis l\'API, on garde les données locales.');
+            }
         },
 
         // Génère le HTML pour une carte d'ami

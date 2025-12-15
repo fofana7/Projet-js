@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Test Rôles - Message.html</title>
+  <style>
+    body {
+      font-family: Inter, sans-serif;
+      background: #0f1720;
+      color: #e6eef8;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #0b84ff;
+    }
+    .roles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .role-btn {
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(11, 132, 255, 0.1);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+    .role-btn:hover {
+      background: rgba(11, 132, 255, 0.2);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .info {
+      background: rgba(255,255,255,0.05);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 3px solid #0b84ff;
+    }
+    .info p {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Message.html - Sélectionner un Rôle</h1>
+    
+    <div class="info">
+      <p><strong>Instructions:</strong> Cliquez sur un rôle pour tester la messagerie avec ce rôle spécifique.</p>
+      <p>Vos données seront stockées dans localStorage avec le rôle sélectionné.</p>
+    </div>
+
+    <h2>Rôles Disponibles</h2>
+    <div class="roles">
+      <button class="role-btn" onclick="testRole('eleve')">
+        👨‍🎓 Élève
+        <br/>
+        <small>Boutons limités</small>
+      </button>
+      <button class="role-btn" onclick="testRole('enseignant')">
+        👨‍🏫 Enseignant
+        <br/>
+        <small>Plus de fonctionnalités</small>
+      </button>
+      <button class="role-btn" onclick="testRole('personnel')">
+        👔 Personnel
+        <br/>
+        <small>Tous les droits</small>
+      </button>
+    </div>
+
+    <div class="info">
+      <h3>✅ Fixes Appliqués</h3>
+      <ul>
+        <li>✓ Tous les boutons sont cliquables</li>
+        <li>✓ Pas d'alert() - utilisation de modales</li>
+        <li>✓ Onglets fonctionnels (Messagerie privée, Groupes, Forum, Docs, Événements, Annonces, Sondages)</li>
+        <li>✓ Boutons d'actions spécifiques au rôle</li>
+        <li>✓ Nouveau message privé fonctionne</li>
+        <li>✓ Toutes les modales créées et fonctionnelles</li>
+        <li>✓ localStorage persiste les données</li>
+      </ul>
+    </div>
+
+    <div class="info">
+      <h3>🧪 Points à Tester</h3>
+      <ul>
+        <li>Cliquer sur chaque onglet</li>
+        <li>Cliquer sur le bouton ➕ pour ajouter une conversation</li>
+        <li>Tester les boutons d'actions selon le rôle</li>
+        <li>Envoyer des messages</li>
+        <li>Utiliser les modales (Publier, Ressource, Document, Annonce)</li>
+        <li>Vérifier localStorage: F12 > Application > localStorage</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function testRole(role) {
+      // Créer un user fake avec le rôle sélectionné
+      const user = {
+        id: 'test-user-' + role,
+        username: 'TestUser',
+        email: 'test@example.com',
+        role: role
+      };
+
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', 'fake-token-' + role);
+
+      // Rediriger vers message.html
+      window.location.href = 'frontend/pages/message.html';
+    }
+  </script>
+</body>
+</html>

@@ -31,6 +31,16 @@
             -webkit-text-fill-color: transparent; 
             background-clip: text; 
         }
+        .header-subtitle {
+            margin-top: 4px;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
         .container { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -127,6 +137,35 @@
             font-size: 20px; 
             margin-bottom: 12px;
         }
+        .chip-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+        .user-chip {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #334155;
+            background: rgba(15, 23, 42, 0.9);
+            font-size: 12px;
+            color: #e5e7eb;
+        }
+        .user-chip-name {
+            font-weight: 600;
+        }
+        .user-chip-handle {
+            color: #9ca3af;
+        }
         .user-info { 
             flex: 1; 
         }
@@ -183,8 +222,14 @@
 </head>
 <body>
     <div class="header">
-        <h1>🤝 Réseau d'Étudiants</h1>
-        <button class="btn primary" onclick="window.location.href='index.html'">← Retour</button>
+        <div>
+            <h1>🤝 Réseau d'Étudiants</h1>
+            <div class="header-subtitle">Gérez vos amitiés et demandes en temps réel</div>
+        </div>
+        <div class="header-right">
+            <div class="user-chip" id="currentUserChip"></div>
+            <button class="btn primary" onclick="window.location.href='index.html'">← Retour</button>
+        </div>
     </div>
 
     <div class="container">
@@ -206,7 +251,7 @@
 
         <!-- Recherche et Découvrir -->
         <div class="section">
-            <div class="section-title">� Découvrir des étudiants</div>
+            <div class="section-title">🔍 Découvrir des étudiants</div>
             <input type="text" id="searchInput" class="search-box" placeholder="Cherche par nom ou email...">
             <div class="users-grid" id="suggestionsBox">
                 <div class="loading">Chargement des utilisateurs...</div>
@@ -215,7 +260,7 @@
 
         <!-- Demandes d'amitié -->
         <div class="section" id="requestsSection" style="display: none;">
-            <div class="section-title">� Demandes d'amitié reçues</div>
+            <div class="section-title">📨 Demandes d'amitié reçues</div>
             <div class="users-grid" id="requestsBox">
                 <div class="empty-state">Aucune demande</div>
             </div>
@@ -224,6 +269,7 @@
         <!-- Mes amis -->
         <div class="section" id="friendsSection" style="display: none;">
             <div class="section-title">💚 Mes amis</div>
+            <input type="text" id="friendsSearchInput" class="search-box" placeholder="Rechercher dans vos amis...">
             <div class="users-grid" id="friendsBox">
                 <div class="empty-state">Aucun ami pour le moment</div>
             </div>
@@ -237,6 +283,14 @@
         let myFriends = [];
         let friendRequests = [];
         let pendingActions = new Set();
+
+        function showAlert(message) {
+            try {
+                alert(message);
+            } catch (e) {
+                console.log('INFO:', message);
+            }
+        }
 
         // ===== INITIALISATION =====
         async function init() {
@@ -254,6 +308,7 @@
                 currentUser = JSON.parse(userStr);
                 console.log('INIT: User ID:', currentUser.id);
                 console.log('INIT: Token:', token.substring(0, 20) + '...');
+                renderCurrentUserChip();
                 
                 // Charger les données initiales
                 await loadData();
@@ -268,6 +323,28 @@
             } catch (e) {
                 console.error('INIT Error:', e);
             }
+        }
+
+        // Afficher l'utilisateur courant dans le header
+        function renderCurrentUserChip() {
+            const chip = document.getElementById('currentUserChip');
+            if (!chip || !currentUser) return;
+
+            const firstName = currentUser.first_name || '';
+            const lastName = currentUser.last_name || '';
+            const fullName = (firstName + ' ' + lastName).trim() || currentUser.username || 'Utilisateur';
+            const handle = currentUser.username ? '@' + currentUser.username : (currentUser.email || '');
+            const initialsSource = firstName || currentUser.username || 'U';
+            const initial = initialsSource.charAt(0).toUpperCase();
+
+            chip.innerHTML = `
+                <div class="chip-avatar">${initial}</div>
+                <div>
+                    <div class="user-chip-name">${fullName}</div>
+                    <div class="user-chip-handle">${handle}</div>
+                </div>
+            `;
+            chip.style.display = 'flex';
         }
 
         // ===== CHARGER LES DONNÉES =====
@@ -289,31 +366,6 @@
                 });
                 myFriends = res.ok ? await res.json() : [];
                 console.log('LOAD: ' + myFriends.length + ' amis (API)');
-                
-                // BONUS: Lire aussi depuis localStorage index.html pour fusionner
-                try {
-                    const localStorageData = localStorage.getItem('minireseau:v1');
-                    if (localStorageData) {
-                        const localState = JSON.parse(localStorageData);
-                        if (localState.friends && Array.isArray(localState.friends)) {
-                            console.log('LOAD: ' + localState.friends.length + ' amis trouvés en local');
-                            // Chercher les utilisateurs correspondant aux noms locaux
-                            localState.friends.forEach(friendName => {
-                                const user = allUsers.find(u => 
-                                    u.first_name === friendName || 
-                                    u.username === friendName ||
-                                    (u.first_name + ' ' + u.last_name) === friendName
-                                );
-                                if (user && !myFriends.find(f => f.id === user.id)) {
-                                    myFriends.push(user);
-                                    console.log('LOAD: Ami fusionné depuis local:', friendName);
-                                }
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.log('LOAD: Pas de données locales à fusionner');
-                }
                 
                 // Demandes reçues
                 res = await fetch(API + '/ami/requests', {
@@ -424,13 +476,24 @@
         // ===== AFFICHER LES AMIS =====
         function renderFriends() {
             const box = document.getElementById('friendsBox');
-            if (myFriends.length === 0) {
+            const search = (document.getElementById('friendsSearchInput')?.value || '').toLowerCase();
+
+            let friends = myFriends;
+            if (search) {
+                friends = friends.filter(u =>
+                    (u.first_name || '').toLowerCase().includes(search) ||
+                    (u.username || '').toLowerCase().includes(search) ||
+                    (u.email || '').toLowerCase().includes(search)
+                );
+            }
+
+            if (friends.length === 0) {
                 box.innerHTML = '<div class="empty-state">Aucun ami</div>';
                 return;
             }
             
             let html = '';
-            myFriends.forEach(u => {
+            friends.forEach(u => {
                 const initial = (u.first_name || u.username || 'U')[0].toUpperCase();
                 html += '<div class="user-card">';
                 html += '<div class="avatar" style="background: linear-gradient(135deg, #10b981, #6366f1);">' + initial + '</div>';
@@ -459,31 +522,20 @@
                     },
                     body: JSON.stringify({ toId: userId })
                 });
-                
+                const data = await res.json().catch(() => ({}));
+
                 if (res.ok) {
                     console.log('Ami ajouté avec succès');
-                    
-                    // Ajouter aussi au localStorage pour la synchronisation
-                    const user = allUsers.find(u => u.id === userId);
-                    if (user) {
-                        const localData = localStorage.getItem('minireseau:v1');
-                        if (localData) {
-                            const localState = JSON.parse(localData);
-                            if (!localState.friends.includes(user.first_name || user.username)) {
-                                localState.friends.push(user.first_name || user.username);
-                                localStorage.setItem('minireseau:v1', JSON.stringify(localState));
-                                console.log('Ami ajouté aussi en local');
-                            }
-                        }
-                    }
-                    
+                    showAlert(data.message || 'Demande d\'amitié envoyée');
                     await loadData();
                     render();
                 } else {
-                    console.error('Erreur ajout ami:', res.status);
+                    console.error('Erreur ajout ami:', res.status, data);
+                    showAlert(data.error || 'Impossible d\'ajouter cet ami (relation déjà existante ?)');
                 }
             } catch (e) {
                 console.error('Error addFriend:', e);
+                showAlert('Erreur réseau pendant l\'ajout de l\'ami');
             } finally {
                 pendingActions.delete('add-' + userId);
             }
@@ -573,6 +625,10 @@
 
         // ===== ÉVÉNEMENTS =====
         document.getElementById('searchInput').addEventListener('input', renderSuggestions);
+        const friendsSearchEl = document.getElementById('friendsSearchInput');
+        if (friendsSearchEl) {
+            friendsSearchEl.addEventListener('input', renderFriends);
+        }
 
         // ===== DÉMARRER =====
         init();

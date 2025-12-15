@@ -12,6 +12,7 @@ const postRoutes = require('./routes/posts');
 const messageRoutes = require('./routes/message');
 const friendsRoutes = require('./routes/ami');
 const contentRoutes = require('./routes/content');
+const constellationRoutes = require('./routes/constellation');
 
 
 const app = express();
@@ -28,22 +29,63 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+// Autoriser des payloads JSON un peu plus gros pour les images encodées en base64
+app.use(bodyParser.json({ limit: '5mb' }));
 
 // ===== INITIALISATION DE LA BASE DE DONNÉES =====
 async function initializeDatabase() {
     try {
+        // Ajouter les colonnes de profil si elles n'existent pas
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+        `);
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+        `);
+        console.log('✓ Migration BD effectuée (colonnes first_name / last_name)');
+
         // Ajouter la colonne bio si elle n'existe pas
         await pool.query(`
             ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(160);
         `);
         console.log('✓ Migration BD effectuée (colonne bio)');
-        
+
         // Ajouter la colonne avatarurl si elle n'existe pas
         await pool.query(`
             ALTER TABLE users ADD COLUMN IF NOT EXISTS avatarurl VARCHAR(255);
         `);
         console.log('✓ Migration BD effectuée (colonne avatarurl)');
+
+        // Ajouter la colonne role si elle n'existe pas
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) DEFAULT 'eleve';
+        `);
+        console.log('✓ Migration BD effectuée (colonne role)');
+
+        // Ajouter la colonne classe si elle n'existe pas
+        await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS classe VARCHAR(64);
+        `);
+        console.log('✓ Migration BD effectuée (colonne classe)');
+
+        // Créer la table des posts si elle n'existe pas
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
+                user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                content TEXT NOT NULL,
+                image_url VARCHAR(255),
+                image_data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_posts_created
+            ON posts(created_at DESC);
+        `);
+        // S'assurer que la colonne image_data existe même si la table est plus ancienne
+        await pool.query(`
+            ALTER TABLE posts ADD COLUMN IF NOT EXISTS image_data TEXT;
+        `);
+        console.log('✓ Table posts créée/vérifiée (avec image_data)');
 
         // Créer la table des messages si elle n'existe pas
         await pool.query(`
@@ -138,8 +180,12 @@ app.use('/api/posts', postRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/ami', friendsRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/constellation', constellationRoutes);
 
 // Servir le frontend (HTML/CSS/JS)
+// Priorité 1: frontend organisé (nouveau)
+app.use('/frontend', express.static(path.join(__dirname, '../frontend')));
+// Priorité 2: racine pour compatibilité anciens liens
 app.use(express.static(path.join(__dirname, '../')));
 
 // Error handler middleware

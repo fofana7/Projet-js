@@ -8,10 +8,22 @@ async function loadSeedData() {
         console.log('📊 Chargement des données de test...');
         
         const seedFile = fs.readFileSync(path.join(__dirname, 'seed-test-users.sql'), 'utf8');
+
+        // On découpe le fichier par point-virgule, puis on enlève
+        // les lignes de commentaires qui commencent par "--".
+        // Cela permet d'avoir des commentaires AVANT les requêtes
+        // sans empêcher leur exécution.
         const statements = seedFile
             .split(';')
-            .map(s => s.trim())
-            .filter(s => s && !s.startsWith('--'));
+            .map(block => {
+                const cleaned = block
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('--'))
+                    .join('\n');
+                return cleaned.trim();
+            })
+            .filter(s => s.length > 0);
 
         for (const statement of statements) {
             if (statement) {

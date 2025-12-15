@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const messageController = require("../controllers/messageController.js");
-const { protect } = require("../middleware/auth");
+const { protect, requireRole } = require("../middleware/auth");
 
 // GET /api/messages/conversations - Récupérer toutes les conversations
 router.get("/conversations", protect, messageController.getConversations);
@@ -14,7 +14,7 @@ router.get("/contacts", protect, messageController.getContacts);
 router.get("/:userId", protect, messageController.getMessages);
 
 // POST /api/messages/send - Envoyer un message
-router.post("/send", protect, messageController.sendMessage);
+router.post("/send", protect, requireRole(['eleve', 'enseignant']), messageController.sendMessage);
 
 // POST /api/messages/:userId/archive - Archiver une conversation
 router.post("/:userId/archive", protect, messageController.archiveConversation);

@@ -77,12 +77,37 @@ module.exports = {
 
             // Vérifier s'il n'y a pas déjà une relation
             const existing = await pool.query(
-                `SELECT id FROM friendships 
+                `SELECT id, user_id_1, user_id_2, status FROM friendships 
                  WHERE (user_id_1 = $1 AND user_id_2 = $2) OR (user_id_1 = $2 AND user_id_2 = $1)`,
                 [fromId, toId]
             );
 
             if (existing.rows.length > 0) {
+                const rel = existing.rows[0];
+
+                // 1) Déjà amis
+                if (rel.status === 'accepted') {
+                    return res.json({ success: true, message: 'Vous êtes déjà amis.' });
+                }
+
+                // 2) Demande déjà envoyée par moi
+                if (rel.status === 'pending' && rel.user_id_1 === fromId) {
+                    return res.json({ success: true, message: 'Demande déjà envoyée.' });
+                }
+
+                // 3) Demande reçue de l'autre utilisateur → l'accepter automatiquement
+                if (rel.status === 'pending' && rel.user_id_2 === fromId) {
+                    await pool.query(
+                        `UPDATE friendships 
+                         SET status = 'accepted' 
+                         WHERE id = $1`,
+                        [rel.id]
+                    );
+                    console.log(`✓ Demande existante acceptée automatiquement: ${toId} <-> ${fromId}`);
+                    return res.json({ success: true, message: 'Demande existante acceptée. Vous êtes maintenant amis.' });
+                }
+
+                // Cas de repli (devrait être rare)
                 return res.status(400).json({ error: 'Relation déjà existante' });
             }
 

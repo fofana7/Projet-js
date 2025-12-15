@@ -66,6 +66,8 @@ function formatAPIPost(apiPost) {
         ts: new Date(apiPost.created_at).getTime(),
         likes: 0,
         comments: [],
+        imageUrl: apiPost.image_url || null,
+        imageData: apiPost.image_data || null,
         authorName: apiPost.username || 'Utilisateur',
         authorHandle: `@${apiPost.username || 'user'}`,
         authorInitials: (apiPost.username || 'U').substring(0, 2).toUpperCase(),

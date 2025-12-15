@@ -1,8 +1,13 @@
 -- Script pour créer des utilisateurs de test pour tester le système d'amis
 -- À exécuter une seule fois
 
--- Insérer 5 utilisateurs de test
-INSERT INTO users (username, email, password_hash, first_name, last_name, bio, created_at) VALUES
+-- S'assurer que les colonnes de profil existent
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+
+-- NB: la colonne de mot de passe dans l'appli s'appelle "password" (pas password_hash)
+-- On met des hash factices, ces comptes servent surtout comme profils visibles dans la liste d'amis.
+INSERT INTO users (username, email, password, first_name, last_name, bio, created_at) VALUES
 ('alice', 'alice@esme.fr', '$2a$10$mockHashAlice123456789', 'Alice', 'Martin', 'Étudiante en développement web', NOW()),
 ('bob', 'bob@esme.fr', '$2a$10$mockHashBob1234567890', 'Bob', 'Dupont', 'Expert en JavaScript', NOW()),
 ('charlie', 'charlie@esme.fr', '$2a$10$mockHashCharlie12345', 'Charlie', 'Leclerc', 'Designer passionné', NOW()),
@@ -54,6 +59,16 @@ INSERT INTO group_members (group_id, user_id, joined_at)
 SELECT g.id, u.id, NOW()
 FROM groups g, users u
 WHERE g.name = 'Hackathon JavaScript' AND u.username IN ('bob', 'diana', 'eve')
+ON CONFLICT DO NOTHING;
+
+-- Lier automatiquement un compte de test ESME perso (ex: alifof@esme.fr) aux comptes ci-dessus
+-- Cette partie suppose que l'utilisateur avec cet email a été créé via l'inscription.
+
+INSERT INTO friendships (user_id_1, user_id_2, status)
+SELECT me.id, u.id, 'accepted'
+FROM users me, users u
+WHERE me.email = 'alifof@esme.fr'
+	AND u.email IN ('alice@esme.fr', 'bob@esme.fr', 'charlie@esme.fr', 'diana@esme.fr', 'eve@esme.fr')
 ON CONFLICT DO NOTHING;
 
 SELECT 'Test data created successfully!' as message;

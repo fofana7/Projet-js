@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MiniRéseau – Espace Enseignant</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #020617;
+      --card-soft: #020617;
+      --accent: #0b84ff;
+      --accent-soft: rgba(37,99,235,0.12);
+      --accent-strong: rgba(37,99,235,0.3);
+      --muted: #9ca3af;
+      --border-subtle: rgba(148,163,184,0.45);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%, #000 100%);
+      color: #e5e7eb;
+    }
+    .shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(2,6,23,0.96);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.85);
+      margin-bottom: 22px;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #38bdf8, #0b84ff 45%, #1d4ed8 80%);
+      box-shadow: 0 0 0 2px rgba(15,23,42,0.95);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .role-pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.12);
+      color: #7dd3fc;
+      border: 1px solid rgba(56,189,248,0.35);
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .topbar-nav {
+      display: flex;
+      gap: 6px;
+      margin-right: 8px;
+    }
+    .nav-btn {
+      border: none;
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid rgba(148,163,184,0.45);
+      transition: 0.15s;
+    }
+    .nav-btn:hover {
+      background: rgba(15,23,42,1);
+      border-color: #60a5fa;
+    }
+    .logout-btn {
+      border: none;
+      background: linear-gradient(135deg,#ef4444,#b91c1c);
+      color: white;
+      font-size: 11px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(239,68,68,0.6);
+    }
+    .logout-btn:hover {
+      filter: brightness(1.05);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0,1fr);
+      }
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+    .card {
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.85));
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 45px rgba(15,23,42,0.9);
+      padding: 18px 18px 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .badge-soft {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-strong);
+      color: #bfdbfe;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    @media (max-width: 640px) {
+      .grid-2 {
+        grid-template-columns: minmax(0,1fr);
+      }
+    }
+    .tile {
+      padding: 10px 10px 9px;
+      border-radius: 12px;
+      background: rgba(15,23,42,0.96);
+      border: 1px solid rgba(31,41,55,0.9);
+      cursor: default;
+    }
+    .tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .tile-title {
+      font-weight: 600;
+    }
+    .pill {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15,23,42,1);
+      border: 1px solid rgba(148,163,184,0.45);
+      color: var(--muted);
+    }
+    .tile-body {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .action-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.96);
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: 0.15s;
+    }
+    .action-btn span {
+      font-size: 13px;
+    }
+    .action-btn:hover {
+      border-color: #60a5fa;
+      background: rgba(15,23,42,1);
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .teacher-banner {
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(120deg,rgba(37,99,235,0.16),rgba(56,189,248,0.14));
+      border: 1px solid rgba(59,130,246,0.55);
+      font-size: 12px;
+    }
+    .teacher-banner strong {
+      color: #bfdbfe;
+    }
+    .field-row {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 8px;
+    }
+    .field-full {
+      margin-top: 8px;
+      display: block;
+    }
+    .field-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 3px;
+      display: block;
+    }
+    .field-input,
+    .field-textarea {
+      width: 100%;
+      border-radius: 9px;
+      border: 1px solid rgba(148,163,184,0.55);
+      background: rgba(15,23,42,0.98);
+      color: #e5e7eb;
+      font-size: 12px;
+      padding: 7px 9px;
+    }
+    .field-textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+    .field-input:focus,
+    .field-textarea:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 1px rgba(37,99,235,0.6);
+    }
+    .btn-small {
+      margin-top: 8px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg,#0b84ff,#2563eb);
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 6px 11px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(37,99,235,0.6);
+    }
+    .btn-small:hover {
+      filter: brightness(1.05);
+    }
+    .status-text {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .ann-list {
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(31,41,55,0.9);
+      background: rgba(15,23,42,0.96);
+      max-height: 180px;
+      overflow: auto;
+      padding: 8px 9px;
+      font-size: 11px;
+    }
+    .ann-item {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(30,64,175,0.4);
+    }
+    .ann-item:last-child { border-bottom: none; }
+    .ann-item-title { font-weight: 600; }
+    .ann-item-meta { color: var(--muted); font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand">
+          <div class="brand-logo"></div>
+          <div>
+            <div class="brand-title">MiniRéseau – Espace Enseignant</div>
+            <div style="font-size:11px;color:var(--muted);">Suivi des promos, annonces et groupes de projet.</div>
+          </div>
+        </div>
+        <span class="role-pill">Rôle actif : Enseignant</span>
+      </div>
+      <div class="topbar-right">
+        <nav class="topbar-nav">
+          <button class="nav-btn" onclick="window.location.href='index.html'">Fil étudiant</button>
+          <button class="nav-btn" onclick="window.location.href='frontend/pages/message.html'">Messagerie</button>
+          <button class="nav-btn" onclick="window.location.href='ami.html'">Réseau d'amis</button>
+          <button class="nav-btn" onclick="window.location.href='constellation.html'">Constellation</button>
+          <button class="nav-btn" onclick="window.location.href='profil.html'">Profil</button>
+        </nav>
+        <div id="teacherUserLabel">Connecté en tant que…</div>
+        <button class="logout-btn" onclick="logout()">Se déconnecter</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="card">
+        <div class="teacher-banner">
+          <strong>Espace réservé aux enseignants de l'ESME.</strong><br/>
+          Publiez des annonces pour vos promos, suivez vos groupes de projet
+          et accédez rapidement à la messagerie des étudiants.
+        </div>
+        <div class="card-header">
+          <div>
+            <div class="card-title">Vos classes & groupes</div>
+            <div class="card-subtitle">Vue rapide des espaces que vous encadrez.</div>
+          </div>
+          <span class="badge-soft">Privilèges enseignant</span>
+        </div>
+        <div class="grid-2">
+          <div class="tile">
+            <div class="tile-header">
+              <div class="tile-title">Groupes de projet</div>
+              <span class="pill">Création & suivi</span>
+            </div>
+            <div class="tile-body">
+              Accédez à la messagerie pour créer des groupes dédiés, suivre les
+              échanges et partager des documents avec vos étudiants.
+            </div>
+            <div class="actions-row">
+              <a href="frontend/pages/message.html" class="action-btn">
+                <span>💬</span> Ouvrir la messagerie
+              </a>
+              <a href="constellation.html" class="action-btn">
+                <span>🪐</span> Voir la constellation
+              </a>
+            </div>
+          </div>
+          <div class="tile">
+            <div class="tile-header">
+              <div class="tile-title">Annonces de cours</div>
+              <span class="pill">Diffusion large</span>
+            </div>
+            <div class="tile-body">
+              Utilisez le fil d'actualité pour publier des annonces importantes
+              (changement de salle, ressources, deadlines), visibles par vos classes.
+            </div>
+            <div class="actions-row">
+              <a href="index.html" class="action-btn">
+                <span>📢</span> Aller au fil
+              </a>
+            </div>
+          </div>
+        </div>
+        <p class="hint">
+          Les droits avancés (modération, annonces officielles, etc.) sont activés
+          automatiquement dans les pages de messagerie et d'actualité en fonction de
+          votre rôle <strong>enseignant</strong>.
+        </p>
+
+        <!-- Bloc annonces par classe -->
+        <div style="margin-top:14px;border-top:1px solid rgba(30,64,175,0.6);padding-top:12px;">
+          <div class="card-header" style="margin-bottom:6px;">
+            <div>
+              <div class="card-title" style="font-size:14px;">Publier une annonce de cours</div>
+              <div class="card-subtitle">Choisissez une classe et envoyez une information ciblée.</div>
+            </div>
+          </div>
+
+          <form onsubmit="publishClassAnnouncement(event)">
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="classNameInput">Classe</label>
+                <input id="classNameInput" class="field-input" placeholder="Ex: L3 INFO A" />
+              </div>
+              <div>
+                <label class="field-label" for="classTitleInput">Titre</label>
+                <input id="classTitleInput" class="field-input" placeholder="Contrôle, changement de salle…" />
+              </div>
+            </div>
+            <div class="field-full">
+              <label class="field-label" for="classContentInput">Message pour la classe</label>
+              <textarea id="classContentInput" class="field-textarea" placeholder="Détaillez l'information pour vos étudiants..."></textarea>
+            </div>
+            <button type="submit" class="btn-small">📢 Publier pour cette classe</button>
+            <div id="classAnnStatus" class="status-text"></div>
+          </form>
+
+          <div class="ann-list" id="classAnnList" style="display:none;"></div>
+        </div>
+        
+        <!-- Bloc création de groupes de classe -->
+        <div style="margin-top:16px;border-top:1px solid rgba(30,64,175,0.6);padding-top:12px;">
+          <div class="card-header" style="margin-bottom:6px;">
+            <div>
+              <div class="card-title" style="font-size:14px;">Créer un groupe de classe</div>
+              <div class="card-subtitle">Idéal si vous suivez plusieurs promos.</div>
+            </div>
+          </div>
+
+          <form onsubmit="createClassGroup(event)">
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="groupClassNameInput">Classe</label>
+                <input id="groupClassNameInput" class="field-input" placeholder="Ex: L2 DATA B" />
+              </div>
+              <div>
+                <label class="field-label" for="groupNameInput">Nom du groupe</label>
+                <input id="groupNameInput" class="field-input" placeholder="Projet IA, TD 3, etc." />
+              </div>
+            </div>
+            <div class="field-full">
+              <label class="field-label" for="groupDescInput">Description (optionnel)</label>
+              <textarea id="groupDescInput" class="field-textarea" placeholder="Objet du groupe, modalités, etc."></textarea>
+            </div>
+            <button type="submit" class="btn-small">👥 Créer le groupe de classe</button>
+            <div id="classGroupStatus" class="status-text"></div>
+          </form>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Résumé rapide</div>
+            <div class="card-subtitle">Vue synthétique de votre activité.</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="tile">
+            <div class="tile-header">
+              <div class="tile-title">Groupes suivis</div>
+              <span class="pill">Exemple</span>
+            </div>
+            <div class="tile-body">
+              Nombre de groupes que vous encadrez dans la messagerie.
+              (À connecter plus tard aux vraies données.)
+            </div>
+          </div>
+          <div class="tile">
+            <div class="tile-header">
+              <div class="tile-title">Promos</div>
+              <span class="pill">Vue globale</span>
+            </div>
+            <div class="tile-body">
+              Accès rapide aux échanges de vos différentes promos via la
+              constellation et le réseau d'amis.
+            </div>
+          </div>
+        </div>
+        <p class="hint">
+          Pour tester rapidement, connectez-vous avec un compte ayant le rôle
+          <code>enseignant</code> puis revenez sur cette page.
+        </p>
+      </aside>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Verrouiller cette page pour le rôle "enseignant" uniquement
+    (function () {
+      try {
+        const user = window.requireRole ? window.requireRole('enseignant') : null;
+        if (!user) return; // requireRole gère déjà la redirection si besoin
+        const label = document.getElementById('teacherUserLabel');
+        if (label) {
+          label.textContent = `Connecté en tant que ${user.username}`;
+        }
+      } catch (e) {
+        console.error('Erreur rôle enseignant :', e);
+      }
+    })();
+
+    const API_BASE = window.location.origin + '/api';
+
+    async function publishClassAnnouncement(event) {
+      event.preventDefault();
+      const classe = document.getElementById('classNameInput').value.trim();
+      const title = document.getElementById('classTitleInput').value.trim();
+      const content = document.getElementById('classContentInput').value.trim();
+      const statusEl = document.getElementById('classAnnStatus');
+
+      if (!classe || !title || !content) {
+        statusEl.textContent = 'Veuillez remplir la classe, le titre et le message.';
+        return;
+      }
+
+      statusEl.textContent = 'Envoi en cours…';
+      try {
+        const token = window.getToken ? window.getToken() : null;
+        const res = await fetch(`${API_BASE}/content/classe`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, content, class_name: classe })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Erreur lors de la publication');
+        }
+        statusEl.textContent = `Annonce publiée pour ${classe}.`;
+        document.getElementById('classContentInput').value = '';
+        loadClassAnnouncements(classe);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = err.message;
+      }
+    }
+
+    async function loadClassAnnouncements(classe) {
+      const list = document.getElementById('classAnnList');
+      if (!classe) {
+        list.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/content/announcements`);
+        const data = await res.json();
+        const anns = (data.announcements || []).filter(a => a.author === classe);
+        if (!anns.length) {
+          list.style.display = 'none';
+          list.innerHTML = '';
+          return;
+        }
+        list.style.display = 'block';
+        list.innerHTML = anns.map(a => {
+          const date = a.created_at ? new Date(a.created_at).toLocaleString('fr-FR') : '';
+          return `<div class="ann-item"><div class="ann-item-title">${a.title}</div><div>${a.content}</div><div class="ann-item-meta">${classe} · ${date}</div></div>`;
+        }).join('');
+      } catch (err) {
+        console.error('Erreur chargement annonces:', err);
+      }
+    }
+
+    async function createClassGroup(event) {
+      event.preventDefault();
+      const classe = document.getElementById('groupClassNameInput').value.trim();
+      const groupName = document.getElementById('groupNameInput').value.trim();
+      const desc = document.getElementById('groupDescInput').value.trim();
+      const statusEl = document.getElementById('classGroupStatus');
+
+      if (!classe || !groupName) {
+        statusEl.textContent = 'Indiquez au minimum la classe et le nom du groupe.';
+        return;
+      }
+
+      statusEl.textContent = 'Création du groupe…';
+      try {
+        const token = window.getToken ? window.getToken() : null;
+        const res = await fetch(`${API_BASE}/ami/groups/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: `${classe} – ${groupName}`,
+            description: desc || `Groupe de classe ${classe}`,
+            memberIds: [] // les étudiants pourront être ajoutés plus tard
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || data.message || 'Erreur lors de la création du groupe');
+        }
+        statusEl.textContent = `Groupe "${classe} – ${groupName}" créé.`;
+        document.getElementById('groupNameInput').value = '';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = err.message;
+      }
+    }
+  </script>
+</body>
+</html>

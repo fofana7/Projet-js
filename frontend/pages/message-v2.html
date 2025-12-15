@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MiniRéseau Étudiants — Messagerie v2</title>
+  <style>
+    :root {
+      --bg: #0f1720;
+      --card: #0b1220;
+      --muted: #9aa4b2;
+      --accent: #0b84ff;
+      --success: #51cf66;
+      --danger: #ff6b6b;
+      --warning: #ffa94d;
+      --radius: 12px;
+      --gap: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0a0e1a 0%, #0f1720 100%);
+      color: #e6eef8;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      background: rgba(15, 23, 32, 0.8);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex: 1;
+    }
+
+    .topbar-center {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .topbar-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.15);
+      color: #e6eef8;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn.primary:hover {
+      background: #0a6fcc;
+      filter: brightness(1.1);
+    }
+
+    /* TABS BAR */
+    .tabs-bar {
+      display: flex;
+      gap: 4px;
+      padding: 8px 18px;
+      background: rgba(15, 23, 32, 0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .tab-btn:hover {
+      color: #e6eef8;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      background: rgba(11, 132, 255, 0.1);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    /* MAIN LAYOUT */
+    .main {
+      display: flex;
+      flex: 1;
+      gap: 16px;
+      padding: 16px 18px 18px 18px;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      background: rgba(11, 18, 32, 0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .sidebar-header span {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .conv-item {
+      padding: 10px;
+      margin-bottom: 6px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+
+    .conv-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .conv-item.active {
+      background: rgba(11, 132, 255, 0.1);
+      border-left-color: var(--accent);
+    }
+
+    .conv-title {
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .conv-type-chip {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      margin-left: 6px;
+    }
+
+    .conv-preview {
+      font-size: 11px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .unread-badge {
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* CHAT PANEL */
+    .chat-panel {
+      flex: 1;
+      background: rgba(11, 18, 32, 0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .chat-header-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 0 0, #38bdf8, #0b84ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .chat-header .actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      padding: 10px 12px;
+      border-radius: 8px;
+      max-width: 70%;
+      word-wrap: break-word;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .message.mine {
+      background: var(--accent);
+      color: white;
+      align-self: flex-end;
+      max-width: 70%;
+    }
+
+    .message.theirs {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      align-self: flex-start;
+    }
+
+    .message-meta {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    .message-reactions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
+    .reaction {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .reaction:hover {
+      background: rgba(255,255,255,0.15);
+      transform: scale(1.1);
+    }
+
+    /* COMPOSER */
+    .composer {
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .composer-input {
+      flex: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #e6eef8;
+      font-size: 12px;
+    }
+
+    .composer-input::placeholder {
+      color: var(--muted);
+    }
+
+    .composer-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* MODALS */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-content h3 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: #e6eef8;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    /* DOCUMENT CARD */
+    .doc-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 11px;
+    }
+
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .doc-icon {
+      font-size: 18px;
+    }
+
+    .doc-name {
+      flex: 1;
+      margin-left: 8px;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .doc-actions button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 2px 4px;
+      transition: color 0.2s;
+    }
+
+    .doc-actions button:hover {
+      color: var(--accent);
+    }
+
+    .doc-meta {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 6px;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .main {
+        gap: 12px;
+      }
+
+      .sidebar {
+        width: 200px;
+      }
+
+      .message {
+        max-width: 80%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .sidebar {
+        width: 100%;
+        max-height: 25vh;
+      }
+
+      .message {
+        max-width: 90%;
+      }
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 20px;
+      font-size: 12px;
+    }
+
+    .friend-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .friend-search {
+      flex: 1;
+      min-width: 150px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(15,23,42,0.8);
+      color: #e6eef8;
+      font-size: 11px;
+    }
+
+    .friend-search::placeholder {
+      color: var(--muted);
+    }
+
+    .friend-count {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .friend-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      margin: 2px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 11px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.02);
+      color: #e6eef8;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .friend-chip.selected {
+      background: rgba(11,132,255,0.25);
+      border-color: var(--accent);
+      color: #e6f4ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="btn" onclick="goBack()">← Retour</button>
+        <strong style="font-size: 14px;">Messagerie MiniRéseau</strong>
+      </div>
+      <div class="topbar-center">
+        <input type="text" id="searchInput" class="composer-input" style="width: 250px;" placeholder="🔍 Rechercher...">
+      </div>
+      <div class="topbar-right">
+        <span style="font-size: 11px; color: var(--muted);" id="userInfo"></span>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('all')">💬 Tous</button>
+      <button class="tab-btn" onclick="switchTab('private')">💭 Privés</button>
+      <button class="tab-btn" onclick="switchTab('groups')">👥 Groupes</button>
+      <button class="tab-btn" onclick="switchTab('forum')">❓ Forum</button>
+      <button class="tab-btn" onclick="switchTab('docs')">📄 Docs</button>
+      <button class="tab-btn" onclick="switchTab('events')">📅 Événements</button>
+      <button class="tab-btn" onclick="switchTab('board')">📢 Annonces</button>
+      <button class="tab-btn" onclick="switchTab('polls')">📊 Sondages</button>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div style="display:flex; gap:8px; padding:8px 18px 0 18px; flex-wrap:wrap;">
+      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal')">💬 Nouveau privé</button>
+      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal'); document.getElementById('convType').value='group'; updateConvForm();">👥 Nouveau groupe</button>
+      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="shareDoc()">📎 Partager un document</button>
+      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="alert('Espace annonces à venir (board).')">📢 Annonce rapide</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h3>Conversations</h3>
+          <button class="btn" onclick="openModal('newConvModal')" style="padding: 4px 8px;">➕</button>
+        </div>
+        <div class="sidebar-list" id="sidebarList"></div>
+      </div>
+
+      <!-- CHAT PANEL -->
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div class="chat-header-main">
+            <div class="avatar-circle" id="chatAvatar">MR</div>
+            <div>
+              <h2 id="chatTitle">Sélectionner une conversation</h2>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" id="chatInfo"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn" onclick="shareDoc()">📎 Fichier</button>
+            <button class="btn" onclick="openGroupMembers()">👥 Groupe</button>
+            <button class="btn" onclick="toggleInfo()">ℹ️ Info</button>
+          </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+          <div class="empty">👋 Sélectionne une conversation pour commencer</div>
+        </div>
+
+        <div class="composer">
+          <textarea id="messageInput" class="composer-input" placeholder="Écris un message..." style="resize: none; min-height: 32px; max-height: 100px;"></textarea>
+          <button class="btn primary" onclick="sendMessage()" style="padding: 8px 16px; height: 32px;">Envoyer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW CONVERSATION MODAL -->
+  <div class="modal" id="newConvModal">
+    <div class="modal-content">
+      <h3>📝 Nouvelle Conversation</h3>
+      <div class="form-group">
+        <label>Type *</label>
+        <select id="convType" onchange="updateConvForm()">
+          <option value="private">💬 Message Privé</option>
+          <option value="group">👥 Groupe</option>
+          <option value="thread">💭 Discussion</option>
+        </select>
+      </div>
+
+      <div id="privateForm">
+        <div class="form-group">
+          <label>Avec qui? *</label>
+          <input type="text" id="privateName" placeholder="Nom du contact">
+        </div>
+      </div>
+
+      <div id="groupForm" style="display:none;">
+        <div class="form-group">
+          <label>Nom du groupe *</label>
+          <input type="text" id="groupName" placeholder="Ex: Projet Math">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="groupDesc" placeholder="Objectif du groupe..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Membres à inviter (amis)</label>
+          <input type="text" id="groupMembers" placeholder="Sélectionne dans ta liste d'amis" readonly>
+          <div class="friend-toolbar">
+            <input type="text" id="groupFriendsSearch" class="friend-search" placeholder="Rechercher un ami...">
+            <span id="groupFriendsCount" class="friend-count">0 ami sélectionné</span>
+          </div>
+          <div id="groupFriendsSuggestions" style="margin-top:2px; display:flex; flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <div id="threadForm" style="display:none;">
+        <div class="form-group">
+          <label>Sujet *</label>
+          <input type="text" id="threadSubject" placeholder="Ex: Chapitre 5 - Questions">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('newConvModal')">Annuler</button>
+        <button class="btn primary" onclick="createConversation()">Créer</button>
+      </div>
+      <div id="convMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
+    </div>
+  </div>
+
+  <!-- NEW EVENT MODAL -->
+  <div class="modal" id="eventModal">
+    <div class="modal-content">
+      <h3>📅 Nouvel évènement</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="eventTitle" placeholder="Ex: Réunion Projet, Tournoi, Sortie...">
+      </div>
+      <div class="form-group">
+        <label>Date & heure *</label>
+        <input type="datetime-local" id="eventDate">
+      </div>
+      <div class="form-group">
+        <label>Lieu</label>
+        <input type="text" id="eventPlace" placeholder="Salle, visio, adresse...">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="eventDesc" placeholder="Détails importants, programme..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('eventModal')">Annuler</button>
+        <button class="btn primary" onclick="submitEvent()">Créer</button>
+      </div>
+      <div id="eventMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
+    </div>
+  </div>
+
+  <!-- GROUP MEMBERS MODAL -->
+  <div class="modal" id="groupMembersModal">
+    <div class="modal-content">
+      <h3>👥 Membres du groupe</h3>
+      <div id="groupMembersList" style="margin-bottom: 10px; font-size: 12px;"></div>
+
+      <div class="form-group">
+        <label>Ajouter un membre</label>
+        <input type="text" id="newMemberName" placeholder="Nom ou pseudo à ajouter">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('groupMembersModal')">Fermer</button>
+        <button class="btn primary" onclick="addGroupMember()">Ajouter</button>
+      </div>
+      <div id="groupMembersMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="shareDocModal">
+    <div class="modal-content">
+      <h3>📎 Partager un Fichier</h3>
+      <div class="form-group">
+        <label>Type de fichier *</label>
+        <select id="docType">
+          <option value="pdf">📄 PDF</option>
+          <option value="image">🖼️ Image</option>
+          <option value="video">🎥 Vidéo</option>
+          <option value="audio">🎵 Audio</option>
+          <option value="document">📝 Document</option>
+          <option value="other">📦 Autre</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Nom du fichier *</label>
+        <input type="text" id="docName" placeholder="Ex: Résumé_Chapitre5.pdf">
+      </div>
+
+      <div class="form-group">
+        <label>URL/Lien *</label>
+        <input type="url" id="docUrl" placeholder="https://... (optionnel si fichier local)">
+      </div>
+
+      <div class="form-group">
+        <label>Depuis votre ordinateur</label>
+        <button type="button" class="btn" style="font-size:11px; padding:4px 8px;" onclick="document.getElementById('fileInput').click()">Choisir un fichier...</button>
+        <div id="localFileInfo" style="margin-top:4px; font-size:11px; color: var(--muted);"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="docDesc" placeholder="À quoi ça sert?"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Taille (en MB)</label>
+        <input type="number" id="docSize" min="0" step="0.1" placeholder="5.2">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('shareDocModal')">Annuler</button>
+        <button class="btn primary" onclick="submitShareDoc()">Partager</button>
+      </div>
+      <div id="docMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" class="file-input" onchange="handleFileUpload()">
+
+  <script>
+    // ========================================
+    // CONSTANTS & STATE
+    // ========================================
+    const STORAGE_KEY = 'minireseau_v2_messages';
+
+    let state = loadState();
+    let currentConvId = null;
+    let currentTab = 'all';
+    let searchQuery = '';
+    let pendingFile = null;
+
+    // Liste d'amis récupérée depuis l'API /api/ami/friends
+    let friendsForMessaging = [];
+    let selectedGroupFriendIds = new Set();
+    let groupFriendsSearchQuery = '';
+
+    // ========================================
+    // STATE MANAGEMENT
+    // ========================================
+    function loadState() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error('State load error:', e);
+        }
+      }
+
+      const user = (() => {
+        try {
+          const u = JSON.parse(localStorage.getItem('user') || 'null');
+          return u || { id: uid(), username: 'Utilisateur', role: 'eleve' };
+        } catch {
+          return { id: uid(), username: 'Utilisateur', role: 'eleve' };
+        }
+      })();
+
+      return {
+        me: user,
+        conversations: [],
+        archived: [],
+        blocked: [],
+        settings: {
+          notifications: true,
+          darkMode: true,
+          unreadBadge: true
+        }
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    // ========================================
+    // UI FUNCTIONS
+    // ========================================
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('active');
+
+      // Quand on ouvre la création de conversation en mode groupe,
+      // on rafraîchit la liste des amis pour être toujours à jour.
+      if (id === 'newConvModal') {
+        const typeSel = document.getElementById('convType');
+        if (typeSel && typeSel.value === 'group') {
+          loadFriendsForMessaging();
+          renderGroupFriendSuggestions();
+        }
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function formatTime(ts) {
+      const date = new Date(ts);
+      const now = new Date();
+      const diff = now - date;
+
+      if (diff < 60000) return 'à l\'instant';
+      if (diff < 3600000) return `il y a ${Math.floor(diff / 60000)}m`;
+      if (diff < 86400000) return `il y a ${Math.floor(diff / 3600000)}h`;
+      if (diff < 604800000) return date.toLocaleDateString();
+      return date.toLocaleDateString();
+    }
+
+    function getFileIcon(type) {
+      const icons = {
+        pdf: '📄',
+        image: '🖼️',
+        video: '🎥',
+        audio: '🎵',
+        document: '📝',
+        other: '📦'
+      };
+      return icons[type] || '📦';
+    }
+
+    function getFriendDisplayName(friend) {
+      if (!friend) return '';
+      if (friend.first_name || friend.last_name) {
+        return [friend.first_name || '', friend.last_name || ''].join(' ').trim();
+      }
+      return friend.username || friend.email || 'Ami';
+    }
+
+    function normalizeName(name) {
+      return (name || '').trim().toLowerCase();
+    }
+
+    // ========================================
+    // TAB MANAGEMENT
+    // ========================================
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.includes('Tous') && tab === 'all'
+        || b.textContent.includes('Privés') && tab === 'private'
+        || b.textContent.includes('Groupes') && tab === 'groups'
+        || b.textContent.includes('Forum') && tab === 'forum'
+        || b.textContent.includes('Docs') && tab === 'docs'
+        || b.textContent.includes('Événements') && tab === 'events'
+        || b.textContent.includes('Annonces') && tab === 'board'
+        || b.textContent.includes('Sondages') && tab === 'polls');
+      if (btn) btn.classList.add('active');
+      if (tab === 'events') {
+        openModal('eventModal');
+      }
+      renderSidebar();
+    }
+
+    // ========================================
+    // CONVERSATION FUNCTIONS
+    // ========================================
+    function createConversation() {
+      const type = document.getElementById('convType').value;
+      let conv;
+
+      if (type === 'private') {
+        const name = document.getElementById('privateName').value.trim();
+        if (!name) {
+          showMessage('convMessage', '❌ Nom requis', 'var(--danger)');
+          return;
+        }
+        conv = {
+          id: uid(),
+          type: 'private',
+          title: name,
+          members: [state.me.username, name],
+          messages: [],
+          createdAt: Date.now(),
+          unread: 0
+        };
+      } else if (type === 'group') {
+        const name = document.getElementById('groupName').value.trim();
+        const desc = document.getElementById('groupDesc').value.trim();
+        const rawMembers = (document.getElementById('groupMembers').value || '').trim();
+        if (!name) {
+          showMessage('convMessage', '❌ Nom requis', 'var(--danger)');
+          return;
+        }
+        let members = [state.me.username];
+        if (rawMembers) {
+          members = members.concat(rawMembers.split(',').map(m => m.trim()).filter(Boolean));
+        }
+        // supprimer les doublons
+        members = Array.from(new Set(members));
+        conv = {
+          id: uid(),
+          type: 'group',
+          title: name,
+          description: desc,
+          members,
+          messages: [],
+          createdAt: Date.now(),
+          unread: 0
+        };
+      } else if (type === 'thread') {
+        const subject = document.getElementById('threadSubject').value.trim();
+        if (!subject) {
+          showMessage('convMessage', '❌ Sujet requis', 'var(--danger)');
+          return;
+        }
+        conv = {
+          id: uid(),
+          type: 'thread',
+          title: subject,
+          messages: [],
+          createdAt: Date.now(),
+          unread: 0
+        };
+      }
+
+      state.conversations.unshift(conv);
+      saveState();
+      showMessage('convMessage', '✓ Créée!', 'var(--success)');
+      
+      setTimeout(() => {
+        closeModal('newConvModal');
+        renderSidebar();
+        openConversation(conv.id);
+        clearForm();
+      }, 600);
+    }
+
+    function submitEvent() {
+      const title = document.getElementById('eventTitle').value.trim();
+      const date = document.getElementById('eventDate').value;
+      const place = document.getElementById('eventPlace').value.trim();
+      const desc = document.getElementById('eventDesc').value.trim();
+      const msgEl = document.getElementById('eventMessage');
+
+      if (!title || !date) {
+        msgEl.textContent = '❌ Titre et date requis';
+        msgEl.style.color = 'var(--danger)';
+        return;
+      }
+
+      const conv = {
+        id: uid(),
+        type: 'events',
+        title,
+        event: {
+          date,
+          place,
+          desc
+        },
+        messages: [],
+        createdAt: Date.now(),
+        unread: 0
+      };
+
+      state.conversations.unshift(conv);
+      saveState();
+      msgEl.textContent = '✓ Évènement créé!';
+      msgEl.style.color = 'var(--success)';
+
+      setTimeout(() => {
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDate').value = '';
+        document.getElementById('eventPlace').value = '';
+        document.getElementById('eventDesc').value = '';
+        closeModal('eventModal');
+        renderSidebar();
+        openConversation(conv.id);
+      }, 700);
+    }
+
+    function openConversation(convId) {
+      const conv = state.conversations.find(c => c.id === convId);
+      if (!conv) return;
+
+      currentConvId = convId;
+      conv.unread = 0;
+
+      renderSidebar();
+      renderChat(conv);
+      saveState();
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('sidebarList');
+      list.innerHTML = '';
+
+      // Filtrer par tab (type logique)
+      let convs = state.conversations;
+      if (currentTab !== 'all') {
+        if (currentTab === 'groups') {
+          convs = convs.filter(c => c.type === 'group');
+        } else if (currentTab === 'forum') {
+          convs = convs.filter(c => c.type === 'thread');
+        } else if (currentTab === 'docs') {
+          convs = convs.filter(c => c.messages.some(m => m.file));
+        } else if (currentTab === 'events') {
+          convs = convs.filter(c => c.type === 'events');
+        } else {
+          convs = convs.filter(c => c.type === currentTab);
+        }
+      }
+
+      // Filtrer par recherche
+      if (searchQuery) {
+        convs = convs.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+
+      if (convs.length === 0) {
+        list.innerHTML = '<div class="empty" style="padding: 20px;">Aucune conversation</div>';
+        return;
+      }
+
+      convs.forEach(conv => {
+        const div = document.createElement('div');
+        div.className = `conv-item ${conv.id === currentConvId ? 'active' : ''}`;
+        div.onclick = () => openConversation(conv.id);
+
+        const title = document.createElement('div');
+        title.className = 'conv-title';
+        title.innerHTML = conv.title;
+
+        // Chip de type (icône)
+        const typeChip = document.createElement('span');
+        typeChip.className = 'conv-type-chip';
+        const typeIcon = {
+          private: '💬',
+          group: '👥',
+          thread: '❓',
+          docs: '📄',
+          events: '📅',
+          board: '📢',
+          polls: '📊'
+        }[conv.type] || '💬';
+        typeChip.textContent = typeIcon;
+        title.prepend(typeChip);
+
+        if (conv.unread > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'unread-badge';
+          badge.textContent = conv.unread > 9 ? '9+' : conv.unread;
+          title.appendChild(badge);
+        }
+
+        const preview = document.createElement('div');
+        preview.className = 'conv-preview';
+        if (conv.type === 'events' && conv.event) {
+          const d = new Date(conv.event.date);
+          const dateStr = isNaN(d.getTime()) ? '' : d.toLocaleString();
+          const place = conv.event.place ? ` • ${conv.event.place}` : '';
+          preview.textContent = `📅 ${dateStr}${place}` || (conv.description || 'Évènement');
+        } else if (conv.messages.length > 0) {
+          const last = conv.messages[conv.messages.length - 1];
+          const label = last.text || (last.file && last.file.name) || '[Fichier]';
+          preview.textContent = `${last.author}: ${label.slice(0, 40)}...`;
+        } else {
+          preview.textContent = conv.description || 'Aucun message';
+        }
+
+        div.appendChild(title);
+        div.appendChild(preview);
+        list.appendChild(div);
+      });
+    }
+
+    function renderChat(conv) {
+      document.getElementById('chatTitle').textContent = conv.title;
+
+      let info;
+      if (conv.type === 'private') {
+        info = `Avec ${conv.members.find(m => m !== state.me.username)}`;
+      } else if (conv.type === 'group') {
+        const members = conv.members || [];
+        info = `${members.length} membre${members.length > 1 ? 's' : ''}`;
+        const others = members.filter(m => m !== state.me.username);
+        if (others.length) {
+          const sample = others.slice(0, 3).join(', ');
+          info += ` • ${sample}${others.length > 3 ? '...' : ''}`;
+        }
+      } else if (conv.type === 'events' && conv.event) {
+        const d = new Date(conv.event.date);
+        const dateStr = isNaN(d.getTime()) ? '' : d.toLocaleString();
+        const place = conv.event.place ? ` • ${conv.event.place}` : '';
+        info = `${dateStr}${place}` || `Évènement créé ${formatTime(conv.createdAt)}`;
+      } else {
+        info = `Discussion lancée ${formatTime(conv.createdAt)}`;
+      }
+      document.getElementById('chatInfo').textContent = info;
+
+      // Avatar (initiales du titre)
+      const avatar = document.getElementById('chatAvatar');
+      if (avatar) {
+        const title = (conv.title || '').trim();
+        const parts = title.split(' ');
+        const initials = (parts[0]?.[0] || 'M') + (parts[1]?.[0] || 'R');
+        avatar.textContent = initials.toUpperCase();
+      }
+
+      const area = document.getElementById('messagesArea');
+      area.innerHTML = '';
+
+      // Carte récap pour les évènements
+      if (conv.type === 'events' && conv.event) {
+        const card = document.createElement('div');
+        card.className = 'doc-card';
+        card.style.marginBottom = '12px';
+
+        const d = new Date(conv.event.date);
+        const dateStr = isNaN(d.getTime()) ? 'Date à préciser' : d.toLocaleString();
+        const place = conv.event.place ? ` • ${conv.event.place}` : '';
+        const desc = conv.event.desc || 'Aucun détail supplémentaire';
+
+        const rsvp = (conv.event.rsvp || {})[state.me.id];
+        let statusLabel = '';
+        if (rsvp === 'yes') statusLabel = '✅ Tu participes à cet évènement';
+        else if (rsvp === 'no') statusLabel = '❌ Tu as indiqué ne pas venir';
+
+        card.innerHTML = `
+          <div class="doc-header">
+            <span class="doc-icon">📅</span>
+            <span class="doc-name">${dateStr}${place}</span>
+          </div>
+          <div class="doc-meta">${desc}</div>
+        `;
+
+        const actions = document.createElement('div');
+        actions.className = 'doc-actions';
+        const yesBtn = document.createElement('button');
+        yesBtn.textContent = 'Je participe';
+        yesBtn.onclick = () => setEventRsvp(conv.id, 'yes');
+        const noBtn = document.createElement('button');
+        noBtn.textContent = 'Je ne peux pas';
+        noBtn.onclick = () => setEventRsvp(conv.id, 'no');
+        actions.appendChild(yesBtn);
+        actions.appendChild(noBtn);
+        card.appendChild(actions);
+
+        if (statusLabel) {
+          const status = document.createElement('div');
+          status.className = 'doc-meta';
+          status.textContent = statusLabel;
+          card.appendChild(status);
+        }
+
+        area.appendChild(card);
+      }
+
+      if (conv.messages.length === 0) {
+        area.innerHTML += '<div class="empty">Sois le premier à envoyer un message!</div>';
+        return;
+      }
+
+      conv.messages.forEach((msg, idx) => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.authorId === state.me.id ? 'mine' : 'theirs'}`;
+
+        if (msg.text) {
+          const text = document.createElement('div');
+          text.textContent = msg.text;
+          div.appendChild(text);
+        }
+
+        if (msg.file) {
+          const file = document.createElement('div');
+          file.className = 'doc-card';
+          file.style.cssText = 'background: rgba(255,255,255,0.08); border: 1px solid rgba(11,132,255,0.3); margin-top: 6px;';
+          file.innerHTML = `
+            <div class="doc-header">
+              <span class="doc-icon">${getFileIcon(msg.file.type)}</span>
+              <span class="doc-name" title="${msg.file.name}">${msg.file.name}</span>
+            </div>
+            <div class="doc-meta">
+              ${msg.file.size ? msg.file.size + ' MB • ' : ''}Partagé par ${msg.author}
+            </div>
+          `;
+
+          // Actions ouvrir / télécharger
+          if (msg.file.url || msg.file.dataUrl) {
+            const actions = document.createElement('div');
+            actions.className = 'doc-actions';
+            if (msg.file.url) {
+              const openLink = document.createElement('a');
+              openLink.href = msg.file.url;
+              openLink.target = '_blank';
+              openLink.textContent = 'Ouvrir';
+              openLink.style.color = 'inherit';
+              actions.appendChild(openLink);
+            }
+            if (msg.file.dataUrl) {
+              const downloadLink = document.createElement('a');
+              downloadLink.href = msg.file.dataUrl;
+              downloadLink.download = msg.file.name || 'fichier';
+              downloadLink.textContent = 'Télécharger';
+              downloadLink.style.color = 'inherit';
+              actions.appendChild(downloadLink);
+            }
+            file.appendChild(actions);
+          }
+          div.appendChild(file);
+        }
+
+        if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+          const reactions = document.createElement('div');
+          reactions.className = 'message-reactions';
+          Object.entries(msg.reactions).forEach(([emoji, count]) => {
+            const span = document.createElement('span');
+            span.className = 'reaction';
+            span.textContent = `${emoji} ${count}`;
+            span.onclick = (e) => {
+              e.stopPropagation();
+              addReaction(conv.id, idx, emoji);
+            };
+            reactions.appendChild(span);
+          });
+          div.appendChild(reactions);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        meta.textContent = `${msg.author} • ${formatTime(msg.ts)}`;
+        div.appendChild(meta);
+
+        area.appendChild(div);
+      });
+
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text && !currentConvId) return;
+
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv) return;
+
+      conv.messages.push({
+        id: uid(),
+        author: state.me.username,
+        authorId: state.me.id,
+        text,
+        ts: Date.now(),
+        reactions: {},
+        read: true
+      });
+
+      document.getElementById('messageInput').value = '';
+      saveState();
+      renderChat(conv);
+      renderSidebar();
+    }
+
+    function addReaction(convId, msgIdx, emoji) {
+      const conv = state.conversations.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      const msg = conv.messages[msgIdx];
+      msg.reactions = msg.reactions || {};
+      msg.reactions[emoji] = (msg.reactions[emoji] || 0) + 1;
+
+      saveState();
+      renderChat(conv);
+    }
+
+    function shareDoc() {
+      if (!currentConvId) {
+        alert('⚠️ Sélectionne une conversation d\'abord');
+        return;
+      }
+      // Ouvre directement la modal; l'utilisateur peut soit coller un lien, soit choisir un fichier local
+      openModal('shareDocModal');
+    }
+
+    function submitShareDoc() {
+      const type = document.getElementById('docType').value;
+      const name = document.getElementById('docName').value.trim();
+      const url = document.getElementById('docUrl').value.trim();
+      const desc = document.getElementById('docDesc').value.trim();
+      const size = parseFloat(document.getElementById('docSize').value) || 0;
+      const msgBox = document.getElementById('docMessage');
+
+      if (!name && !pendingFile) {
+        showMessage('docMessage', '❌ Nom requis (ou choisissez un fichier)', 'var(--danger)');
+        return;
+      }
+      if (!url && !pendingFile) {
+        showMessage('docMessage', '❌ Fournissez un lien ou un fichier local', 'var(--danger)');
+        return;
+      }
+
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv) return;
+
+      const finalize = () => {
+        saveState();
+        showMessage('docMessage', '✓ Fichier partagé!', 'var(--success)');
+
+        setTimeout(() => {
+          closeModal('shareDocModal');
+          clearForm();
+          renderChat(conv);
+          renderSidebar();
+        }, 800);
+      };
+
+      // Cas fichier local (pendingFile)
+      if (pendingFile) {
+        msgBox.textContent = 'Envoi du fichier...';
+        msgBox.style.color = 'var(--muted)';
+        const file = pendingFile;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          conv.messages.push({
+            id: uid(),
+            author: state.me.username,
+            authorId: state.me.id,
+            file: {
+              name: name || file.name,
+              type,
+              desc,
+              size: size || +(file.size / 1024 / 1024).toFixed(1),
+              dataUrl: e.target.result
+            },
+            ts: Date.now(),
+            reactions: {},
+            read: true
+          });
+          finalize();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Cas lien externe
+        conv.messages.push({
+          id: uid(),
+          author: state.me.username,
+          authorId: state.me.id,
+          file: {
+            name,
+            type,
+            url,
+            desc,
+            size
+          },
+          ts: Date.now(),
+          reactions: {},
+          read: true
+        });
+        finalize();
+      }
+    }
+
+    // ========================================
+    // UTILITY FUNCTIONS
+    // ========================================
+    function showMessage(elementId, text, color) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.textContent = text;
+        el.style.color = color;
+      }
+    }
+
+    function clearForm() {
+      document.getElementById('privateName').value = '';
+      document.getElementById('groupName').value = '';
+      document.getElementById('groupDesc').value = '';
+      const gm = document.getElementById('groupMembers');
+      if (gm) gm.value = '';
+      document.getElementById('threadSubject').value = '';
+      document.getElementById('docName').value = '';
+      document.getElementById('docUrl').value = '';
+      document.getElementById('docDesc').value = '';
+      document.getElementById('docSize').value = '';
+      pendingFile = null;
+      const info = document.getElementById('localFileInfo');
+      if (info) info.textContent = '';
+      const input = document.getElementById('fileInput');
+      if (input) input.value = '';
+    }
+
+    function updateConvForm() {
+      const type = document.getElementById('convType').value;
+      document.getElementById('privateForm').style.display = type === 'private' ? 'block' : 'none';
+      document.getElementById('groupForm').style.display = type === 'group' ? 'block' : 'none';
+      document.getElementById('threadForm').style.display = type === 'thread' ? 'block' : 'none';
+
+      if (type === 'group') {
+        renderGroupFriendSuggestions();
+      }
+    }
+
+    function toggleInfo() {
+      alert('ℹ️ Infos conversation\n\nID: ' + currentConvId + '\nMessages: ' + 
+        (state.conversations.find(c => c.id === currentConvId)?.messages.length || 0));
+    }
+
+    function setEventRsvp(convId, status) {
+      const conv = state.conversations.find(c => c.id === convId);
+      if (!conv || conv.type !== 'events') return;
+      conv.event = conv.event || {};
+      conv.event.rsvp = conv.event.rsvp || {};
+      conv.event.rsvp[state.me.id] = status;
+      saveState();
+      if (convId === currentConvId) {
+        renderChat(conv);
+      }
+    }
+
+    function openGroupMembers() {
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv || conv.type !== 'group') {
+        alert('Cette gestion est disponible uniquement pour les conversations de type groupe.');
+        return;
+      }
+      renderGroupMembers(conv);
+      showMessage('groupMembersMessage', '', '');
+      openModal('groupMembersModal');
+    }
+
+    function renderGroupMembers(conv) {
+      const container = document.getElementById('groupMembersList');
+      if (!container) return;
+      const meName = state.me.username;
+      container.innerHTML = '';
+
+      if (!conv.members || conv.members.length === 0) {
+        container.innerHTML = '<div class="empty" style="padding:10px;">Aucun membre pour l\'instant</div>';
+        return;
+      }
+
+      conv.members.forEach((name, idx) => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.marginBottom = '4px';
+
+        const span = document.createElement('span');
+        span.textContent = name === meName ? name + ' (toi)' : name;
+        row.appendChild(span);
+
+        if (name !== meName) {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.style.fontSize = '10px';
+          btn.style.padding = '2px 6px';
+          btn.textContent = 'Retirer';
+          btn.onclick = () => removeGroupMember(idx);
+          row.appendChild(btn);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    function addGroupMember() {
+      const input = document.getElementById('newMemberName');
+      const name = (input?.value || '').trim();
+      if (!name) {
+        showMessage('groupMembersMessage', '❌ Entrez un nom à ajouter', 'var(--danger)');
+        return;
+      }
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv || conv.type !== 'group') return;
+
+      // On n'autorise que des amis existants pour la synchro
+      const match = friendsForMessaging.find(f => normalizeName(getFriendDisplayName(f)) === normalizeName(name));
+      if (!match) {
+        showMessage('groupMembersMessage', '⚠️ Ce nom ne correspond à aucun de tes amis', 'var(--danger)');
+        return;
+      }
+
+      const displayName = getFriendDisplayName(match);
+
+      conv.members = conv.members || [];
+      if (conv.members.map(m => normalizeName(m)).includes(normalizeName(displayName))) {
+        showMessage('groupMembersMessage', '⚠️ Ce membre est déjà dans le groupe', 'var(--warning)');
+        return;
+      }
+
+      conv.members.push(displayName);
+      saveState();
+      renderGroupMembers(conv);
+      renderChat(conv);
+      input.value = '';
+      showMessage('groupMembersMessage', '✓ Membre ajouté', 'var(--success)');
+    }
+
+    function removeGroupMember(index) {
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv || conv.type !== 'group' || !conv.members) return;
+      if (index < 0 || index >= conv.members.length) return;
+
+      const removed = conv.members.splice(index, 1)[0];
+      saveState();
+      renderGroupMembers(conv);
+      renderChat(conv);
+      showMessage('groupMembersMessage', `Membre retiré: ${removed}`, 'var(--muted)');
+    }
+
+    function goBack() {
+      window.location.href = '../index.html';
+    }
+
+    function handleFileUpload() {
+      const input = document.getElementById('fileInput');
+      if (!input || !input.files || !input.files[0]) return;
+      const file = input.files[0];
+      pendingFile = file;
+
+      const nameEl = document.getElementById('docName');
+      const sizeEl = document.getElementById('docSize');
+      const info = document.getElementById('localFileInfo');
+      if (nameEl) nameEl.value = file.name;
+      if (sizeEl) sizeEl.value = (file.size / 1024 / 1024).toFixed(1);
+      if (info) info.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} Mo)`;
+
+      // Détecter automatiquement le type
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      let detected = 'other';
+      if (['pdf'].includes(ext)) detected = 'pdf';
+      else if (['png','jpg','jpeg','gif','webp'].includes(ext)) detected = 'image';
+      else if (['mp4','mov','avi','mkv','webm'].includes(ext)) detected = 'video';
+      else if (['mp3','wav','ogg'].includes(ext)) detected = 'audio';
+      else if (['doc','docx','odt','txt','ppt','pptx'].includes(ext)) detected = 'document';
+      const typeSelect = document.getElementById('docType');
+      if (typeSelect) typeSelect.value = detected;
+
+      openModal('shareDocModal');
+    }
+
+    // Charger les amis depuis l'API pour la messagerie (synchronisé avec ami.html)
+    async function loadFriendsForMessaging() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/api/ami/friends', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          console.warn('Impossible de charger les amis pour la messagerie:', res.status);
+          return;
+        }
+        const data = await res.json();
+        friendsForMessaging = Array.isArray(data) ? data : [];
+        // Ne garde dans la sélection que les IDs encore valides
+        selectedGroupFriendIds = new Set(
+          Array.from(selectedGroupFriendIds).filter(id =>
+            friendsForMessaging.some(f => f.id === id)
+          )
+        );
+        renderGroupFriendSuggestions();
+      } catch (e) {
+        console.error('Erreur chargement amis messagerie:', e);
+      }
+    }
+
+    function renderGroupFriendSuggestions() {
+      const container = document.getElementById('groupFriendsSuggestions');
+      const input = document.getElementById('groupMembers');
+      const searchInput = document.getElementById('groupFriendsSearch');
+      const countLabel = document.getElementById('groupFriendsCount');
+      if (!container || !input) return;
+      
+      if (searchInput && searchInput.oninput == null) {
+        searchInput.oninput = (e) => {
+          groupFriendsSearchQuery = (e.target.value || '').toLowerCase();
+          renderGroupFriendSuggestions();
+        };
+      }
+
+      container.innerHTML = '';
+      selectedGroupFriendIds = new Set(selectedGroupFriendIds); // s'assurer que c'est un Set
+
+      if (!friendsForMessaging || friendsForMessaging.length === 0) {
+        container.innerHTML = '<span style="font-size:11px; color: var(--muted);">Aucun ami trouvé pour l’instant.</span>';
+        input.value = '';
+        if (countLabel) countLabel.textContent = '0 ami sélectionné';
+        return;
+      }
+
+      // Appliquer la recherche
+      const filtered = friendsForMessaging.filter(friend => {
+        const name = getFriendDisplayName(friend).toLowerCase();
+        const email = (friend.email || '').toLowerCase();
+        if (!groupFriendsSearchQuery) return true;
+        return name.includes(groupFriendsSearchQuery) || email.includes(groupFriendsSearchQuery);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<span style="font-size:11px; color: var(--muted);">Aucun ami ne correspond à cette recherche.</span>';
+      }
+
+      filtered.forEach(friend => {
+        const name = getFriendDisplayName(friend);
+        const chip = document.createElement('div');
+        chip.className = 'friend-chip' + (selectedGroupFriendIds.has(friend.id) ? ' selected' : '');
+        chip.textContent = name;
+        chip.onclick = () => {
+          if (selectedGroupFriendIds.has(friend.id)) {
+            selectedGroupFriendIds.delete(friend.id);
+          } else {
+            selectedGroupFriendIds.add(friend.id);
+          }
+          // Mettre à jour l'affichage et le champ de membres
+          const names = friendsForMessaging
+            .filter(f => selectedGroupFriendIds.has(f.id))
+            .map(f => getFriendDisplayName(f));
+          input.value = names.join(', ');
+          renderGroupFriendSuggestions();
+        };
+        container.appendChild(chip);
+      });
+
+      // Mettre à jour le compteur
+      if (countLabel) {
+        const count = selectedGroupFriendIds.size;
+        countLabel.textContent = count + ' ami' + (count > 1 ? 's sélectionnés' : ' sélectionné');
+      }
+    }
+
+    // Récupère l'utilisateur courant depuis localStorage.user
+    function getSessionUser() {
+      try {
+        const raw = localStorage.getItem('user');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.id) return null;
+        return {
+          id: parsed.id,
+          username: parsed.username || 'Utilisateur',
+          role: parsed.role || 'eleve'
+        };
+      } catch (e) {
+        console.warn('Impossible de lire la session utilisateur pour la messagerie:', e);
+        return null;
+      }
+    }
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    function init() {
+      // Vérifier qu'une session existe, sinon renvoyer vers la page de connexion
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      if (!token || !storedUser) {
+        window.location.href = '../login.html';
+        return;
+      }
+
+      // Synchroniser l'utilisateur de la messagerie avec l'utilisateur réellement connecté
+      const sessionUser = getSessionUser();
+      if (sessionUser) {
+        if (!state.me) state.me = {};
+        state.me.id = sessionUser.id;
+        state.me.username = sessionUser.username;
+        state.me.role = sessionUser.role;
+        saveState();
+      }
+
+      const userInfoEl = document.getElementById('userInfo');
+      if (userInfoEl && state.me) {
+        userInfoEl.textContent = state.me.role
+          ? `${state.me.username} (${state.me.role})`
+          : state.me.username;
+      }
+      
+      renderSidebar();
+
+      // Search
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderSidebar();
+      });
+
+      // Enter key for message
+      document.getElementById('messageInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Charger les amis réels pour la création / gestion de groupes
+      loadFriendsForMessaging();
+
+      // Seed demo data
+      if (state.conversations.length === 0) {
+        state.conversations.push({
+          id: uid(),
+          type: 'private',
+          title: 'Alice',
+          members: [state.me.username, 'Alice'],
+          messages: [
+            {
+              id: uid(),
+              author: 'Alice',
+              authorId: 'alice123',
+              text: 'Salut! Comment tu vas?',
+              ts: Date.now() - 3600000,
+              reactions: { '👍': 2 }
+            }
+          ],
+          createdAt: Date.now() - 86400000,
+          unread: 1
+        });
+        saveState();
+        renderSidebar();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

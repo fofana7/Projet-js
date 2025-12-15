@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MiniRéseau Étudiants — Messagerie</title>
+  <style>
+    :root {
+      --bg: #0f1720;
+      --card: #0b1220;
+      --muted: #9aa4b2;
+      --accent: #0b84ff;
+      --glass: rgba(255,255,255,0.03);
+      --radius: 12px;
+      --gap: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #071021 0%, #081827 100%);
+      color: #e6eef8;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .topbar .left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .topbar strong {
+      font-size: 16px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: #e6eef8;
+      outline: none;
+      width: 200px;
+    }
+
+    .search-box input::placeholder {
+      color: var(--muted);
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn.primary:hover {
+      background: #0a6fcc;
+    }
+
+    .tabs-container {
+      display: flex;
+      gap: 8px;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px 14px;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: 0.2s;
+      position: relative;
+    }
+
+    .tab-btn:hover {
+      color: #e6eef8;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #ff6b6b;
+      color: white;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 6px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    .role-actions {
+      display: flex;
+      gap: 8px;
+      padding: 12px 18px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+
+    .role-actions .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .main-container {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border: 1px solid rgba(255,255,255,0.03);
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header strong {
+      font-size: 13px;
+    }
+
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .conv {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      align-items: center;
+      transition: 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .conv:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .conv.active {
+      background: rgba(11,132,255,0.15);
+      border: 1px solid rgba(11,132,255,0.3);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      background: linear-gradient(180deg, #0b84ff22, #4ab3ff11);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .conv-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .conv-title {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conv-preview {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conv-time {
+      font-size: 11px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border: 1px solid rgba(255,255,255,0.03);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+
+    .chat-header-info {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .chat-header-text strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .chat-header-text .status {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .messages-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .msg {
+      max-width: 72%;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--glass);
+      word-break: break-word;
+      line-height: 1.4;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .msg.me {
+      margin-left: auto;
+      background: linear-gradient(90deg, rgba(11,132,255,0.16), rgba(11,132,255,0.08));
+    }
+
+    .msg-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .msg-author {
+      font-weight: 600;
+    }
+
+    .msg-time {
+      margin-left: 8px;
+      font-size: 11px;
+    }
+
+    .msg-content {
+      color: #e6eef8;
+    }
+
+    .msg-image {
+      max-width: 200px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+
+    .msg-file {
+      display: block;
+      color: var(--accent);
+      text-decoration: underline;
+      margin-top: 4px;
+      font-size: 12px;
+    }
+
+    .composer {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,0.03);
+      flex-shrink: 0;
+      align-items: flex-end;
+    }
+
+    .composer textarea {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.02);
+      color: inherit;
+      min-height: 44px;
+      max-height: 120px;
+      resize: none;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .composer textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(11,132,255,0.05);
+    }
+
+    .composer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .file-btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      background: transparent;
+      transition: 0.2s;
+    }
+
+    .file-btn:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card);
+      padding: 24px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.02);
+      color: inherit;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(11,132,255,0.05);
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+      font-size: 13px;
+    }
+
+    .modal-actions .btn-submit {
+      background: var(--accent);
+      color: white;
+    }
+
+    .modal-actions .btn-submit:hover {
+      background: #0a6fcc;
+    }
+
+    .modal-actions .btn-cancel {
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+
+    .modal-actions .btn-cancel:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .modal-message {
+      margin-top: 12px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        max-height: 35vh;
+      }
+
+      .chat-panel {
+        flex: 1;
+      }
+
+      .tabs-container {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="left">
+        <button class="btn" onclick="window.location.href='../index.html'">← Retour</button>
+        <strong>Messagerie MiniRéseau Étudiants</strong>
+      </div>
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Rechercher...">
+      </div>
+      <div>
+        <span id="userInfo" style="font-size: 12px; color: var(--muted);"></span>
+      </div>
+    </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container" id="tabsContainer"></div>
+
+    <!-- Role-based actions -->
+    <div class="role-actions" id="roleActions"></div>
+
+    <!-- Main content -->
+    <div class="main-container">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <strong id="sidebarTitle">Conversations privées</strong>
+          <button class="btn" id="newConvBtn" style="padding: 4px 8px; font-size: 12px;">➕</button>
+        </div>
+        <div class="sidebar-list" id="sidebarList"></div>
+      </div>
+
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="avatar" id="chatAvatar">—</div>
+            <div class="chat-header-text">
+              <strong id="chatTitle">Sélectionner une conversation</strong>
+              <div class="status" id="chatStatus"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="messages-list" id="messagesList">
+          <div class="empty">Aucune conversation sélectionnée</div>
+        </div>
+
+        <div class="composer" id="composerRow" style="display: none;">
+          <textarea id="messageInput" placeholder="Écrire un message... (Maj+Entrée pour nouvelle ligne)"></textarea>
+          <div class="composer-actions">
+            <label class="file-btn" for="fileInput">📎</label>
+            <input type="file" id="fileInput" />
+            <button class="btn primary" id="sendBtn">Envoyer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Modal -->
+  <div class="modal" id="docModal">
+    <div class="modal-content">
+      <h3>Partager un document</h3>
+      <div class="form-group">
+        <label>Titre du document *</label>
+        <input type="text" id="docTitle" placeholder="Ex: Résumé Mathématiques" />
+      </div>
+      <div class="form-group">
+        <label>URL du document *</label>
+        <input type="url" id="docUrl" placeholder="Ex: https://drive.google.com/..." />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="docDesc" placeholder="Décrivez le contenu..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('docModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitDoc()">Partager</button>
+      </div>
+      <div class="modal-message" id="docMessage"></div>
+    </div>
+  </div>
+
+  <!-- Post Modal (for élèves) -->
+  <div class="modal" id="postModal">
+    <div class="modal-content">
+      <h3>Publier un message</h3>
+      <div class="form-group">
+        <label>Votre message *</label>
+        <textarea id="postText" placeholder="Quoi de neuf?" style="min-height: 120px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="postPublic" />
+          Publier dans le forum (visible à tous)
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('postModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitPost()">Publier</button>
+      </div>
+      <div class="modal-message" id="postMessage"></div>
+    </div>
+  </div>
+
+  <!-- Class Post Modal (for enseignants) -->
+  <div class="modal" id="classPostModal">
+    <div class="modal-content">
+      <h3>Publier pour la classe</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="classPostTitle" placeholder="Ex: Devoir de Mathématiques" />
+      </div>
+      <div class="form-group">
+        <label>Contenu *</label>
+        <textarea id="classPostContent" placeholder="Contenu du post..." style="min-height: 120px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Classe cible *</label>
+        <input type="text" id="classPostTarget" placeholder="Ex: 3A, 3B" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('classPostModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitClassPost()">Publier</button>
+      </div>
+      <div class="modal-message" id="classPostMessage"></div>
+    </div>
+  </div>
+
+  <!-- Resource Modal (for enseignants) -->
+  <div class="modal" id="resourceModal">
+    <div class="modal-content">
+      <h3>Partager une ressource</h3>
+      <div class="form-group">
+        <label>Nom de la ressource *</label>
+        <input type="text" id="resourceName" placeholder="Ex: Cours de Biologie - Chapitre 5" />
+      </div>
+      <div class="form-group">
+        <label>Type de ressource *</label>
+        <select id="resourceType" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: inherit; border-radius: 8px;">
+          <option value="pdf">📄 Fichier PDF</option>
+          <option value="video">🎬 Vidéo</option>
+          <option value="exercice">✏️ Exercice</option>
+          <option value="lien">🔗 Lien externe</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>URL/Lien *</label>
+        <input type="url" id="resourceUrl" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="resourceDesc" placeholder="Décrivez cette ressource..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('resourceModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitResource()">Partager</button>
+      </div>
+      <div class="modal-message" id="resourceMessage"></div>
+    </div>
+  </div>
+
+  <!-- Announce Modal (for personnel) -->
+  <div class="modal" id="announceModal">
+    <div class="modal-content">
+      <h3>Publier une annonce</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="announceTitle" placeholder="Ex: Fermeture de l'école le 25/12" />
+      </div>
+      <div class="form-group">
+        <label>Message *</label>
+        <textarea id="announceText" placeholder="Contenu de l'annonce..." style="min-height: 120px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Priorité</label>
+        <select id="announcePriority" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: inherit; border-radius: 8px;">
+          <option value="normal">⚪ Normal</option>
+          <option value="important">🟠 Important</option>
+          <option value="urgent">🔴 Urgent</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('announceModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAnnounce()">Publier</button>
+      </div>
+      <div class="modal-message" id="announceMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Private Conversation Modal -->
+  <div class="modal" id="addPrivateModal">
+    <div class="modal-content">
+      <h3>💬 Nouvelle conversation privée</h3>
+      <div class="form-group">
+        <label>Nom du contact *</label>
+        <input type="text" id="privateName" placeholder="Ex: Alice, Bob, Marie" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addPrivateModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddPrivate()">Créer</button>
+      </div>
+      <div class="modal-message" id="addPrivateMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Group Modal -->
+  <div class="modal" id="addGroupModal">
+    <div class="modal-content">
+      <h3>👥 Créer un groupe</h3>
+      <div class="form-group">
+        <label>Nom du groupe *</label>
+        <input type="text" id="groupName" placeholder="Ex: Projet Maths, Club Débat" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="groupDesc" placeholder="De quoi parle ce groupe?"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addGroupModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddGroup()">Créer</button>
+      </div>
+      <div class="modal-message" id="addGroupMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Forum Question Modal -->
+  <div class="modal" id="addForumModal">
+    <div class="modal-content">
+      <h3>❓ Poser une question</h3>
+      <div class="form-group">
+        <label>Votre question *</label>
+        <textarea id="forumQuestion" placeholder="Posez votre question au forum..." style="min-height: 100px;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addForumModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddForum()">Poser</button>
+      </div>
+      <div class="modal-message" id="addForumMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Event Modal -->
+  <div class="modal" id="addEventModal">
+    <div class="modal-content">
+      <h3>📅 Créer un événement</h3>
+      <div class="form-group">
+        <label>Nom de l'événement *</label>
+        <input type="text" id="eventName" placeholder="Ex: Sortie scolaire, Réunion parents" />
+      </div>
+      <div class="form-group">
+        <label>Date et heure *</label>
+        <input type="datetime-local" id="eventWhen" />
+      </div>
+      <div class="form-group">
+        <label>Lieu *</label>
+        <input type="text" id="eventWhere" placeholder="Ex: Salle 101, Parc municipal" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addEventModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddEvent()">Créer</button>
+      </div>
+      <div class="modal-message" id="addEventMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Poll Modal -->
+  <div class="modal" id="addPollModal">
+    <div class="modal-content">
+      <h3>📊 Créer un sondage</h3>
+      <div class="form-group">
+        <label>Question *</label>
+        <input type="text" id="pollQuestion" placeholder="Ex: Quelle est votre matière préférée?" />
+      </div>
+      <div class="form-group">
+        <label>Option 1 *</label>
+        <input type="text" id="pollOpt1" placeholder="Ex: Mathématiques" />
+      </div>
+      <div class="form-group">
+        <label>Option 2 *</label>
+        <input type="text" id="pollOpt2" placeholder="Ex: Français" />
+      </div>
+      <div class="form-group">
+        <label>Options supplémentaires</label>
+        <input type="text" id="pollOpt3" placeholder="Option 3 (optionnel)" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addPollModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddPoll()">Créer</button>
+      </div>
+      <div class="modal-message" id="addPollMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Docs Modal -->
+  <div class="modal" id="addDocsModal">
+    <div class="modal-content">
+      <h3>📄 Ajouter un document</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="docsTitle" placeholder="Ex: Résumé Chapitre 5" />
+      </div>
+      <div class="form-group">
+        <label>URL/Lien *</label>
+        <input type="url" id="docsUrl" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="docsDesc" placeholder="De quoi parle ce document?"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addDocsModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddDocs()">Ajouter</button>
+      </div>
+      <div class="modal-message" id="addDocsMessage"></div>
+    </div>
+  </div>
+
+  <!-- Add Board Modal -->
+  <div class="modal" id="addBoardModal">
+    <div class="modal-content">
+      <h3>📢 Publier une annonce</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="boardTitle" placeholder="Ex: Horaires modifiés" />
+      </div>
+      <div class="form-group">
+        <label>Contenu *</label>
+        <textarea id="boardContent" placeholder="Contenu de l'annonce..." style="min-height: 100px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Priorité</label>
+        <select id="boardPriority" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: inherit; border-radius: 8px;">
+          <option value="normal">⚪ Normal</option>
+          <option value="important">🟠 Important</option>
+          <option value="urgent">🔴 Urgent</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addBoardModal')">Annuler</button>
+        <button class="btn-submit" onclick="submitAddBoard()">Publier</button>
+      </div>
+      <div class="modal-message" id="addBoardMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // CONFIGURATION & STATE
+    // ========================================
+    const API_URL = 'http://localhost:3000/api';
+    const STORAGE_KEY = 'minireseau_messaging_v2';
+
+    const TABS = {
+      private: { label: 'Messagerie privée', icon: '💬' },
+      groups: { label: 'Groupes / Projets', icon: '👥' },
+      forum: { label: 'Forum Q&R', icon: '❓' },
+      docs: { label: 'Partage docs', icon: '📄' },
+      events: { label: 'Événements', icon: '📅' },
+      board: { label: 'Annonces', icon: '📢' },
+      polls: { label: 'Sondages', icon: '📊' }
+    };
+
+    const ROLE_ACTIONS = {
+      eleve: [
+        { id: 'btn-post', label: '📝 Publier', action: () => openModal('postModal') },
+        { id: 'btn-msg', label: '💬 Nouveau', action: () => createNewMessage() },
+        { id: 'btn-class', label: '📚 Forum', action: () => switchTab('forum') }
+      ],
+      enseignant: [
+        { id: 'btn-class-post', label: '📝 Classe', action: () => openModal('classPostModal') },
+        { id: 'btn-resource', label: '📦 Ressource', action: () => openModal('resourceModal') },
+        { id: 'btn-moderate', label: '🛡️ Modérer', action: () => switchTab('forum') }
+      ],
+      personnel: [
+        { id: 'btn-announce', label: '📢 Annonce', action: () => openModal('announceModal') },
+        { id: 'btn-manage', label: '👥 Gestion', action: () => alert('Gestion utilisateurs - Non implémenté') },
+        { id: 'btn-moderate-all', label: '🌐 Modération', action: () => switchTab('board') },
+        { id: 'btn-doc-share', label: '📄 Document', action: () => openModal('docModal') }
+      ]
+    };
+
+    let state = loadState();
+    let currentTab = 'private';
+    let currentConvId = null;
+    let friends = [];
+
+    // ========================================
+    // STATE MANAGEMENT
+    // ========================================
+    function loadState() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.warn('State load error:', e);
+        }
+      }
+
+      const appUser = (() => {
+        try {
+          const u = JSON.parse(localStorage.getItem('user') || 'null');
+          return u || { username: 'Utilisateur', id: 'demo' };
+        } catch (e) {
+          return { username: 'Utilisateur', id: 'demo' };
+        }
+      })();
+
+      return {
+        me: { id: appUser.id || 'demo', name: appUser.username || 'Utilisateur' },
+        role: appUser.role || 'eleve',
+        private: [],
+        groups: [],
+        forum: [],
+        docs: [],
+        events: [],
+        board: [],
+        polls: []
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // ========================================
+    // API & DATA LOADING
+    // ========================================
+    async function loadUserRole() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return state.role;
+
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const user = await res.json();
+          state.role = user.role || 'eleve';
+          saveState();
+          return state.role;
+        }
+      } catch (e) {
+        console.warn('Role fetch failed:', e);
+      }
+
+      return state.role;
+    }
+
+    async function loadFriends() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/ami`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          friends = await res.json();
+          console.log(`Loaded ${friends.length} friends`);
+
+          friends.forEach(friend => {
+            const convId = `private-${friend.id}`;
+            if (!state.private.find(c => c.id === convId)) {
+              state.private.push({
+                id: convId,
+                title: friend.username || 'Unknown',
+                friendId: friend.id,
+                messages: [],
+                lastTs: Date.now()
+              });
+            }
+          });
+          saveState();
+        }
+      } catch (e) {
+        console.warn('Friends load failed:', e);
+      }
+    }
+
+    // ========================================
+    // UI RENDERING
+    // ========================================
+    function initTabs() {
+      const container = document.getElementById('tabsContainer');
+      container.innerHTML = '';
+
+      Object.entries(TABS).forEach(([key, config]) => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${key === currentTab ? 'active' : ''}`;
+        btn.textContent = config.label;
+        btn.onclick = () => switchTab(key);
+        container.appendChild(btn);
+      });
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      currentConvId = null;
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn')[Object.keys(TABS).indexOf(tab)].classList.add('active');
+
+      updateSidebar();
+      updateChat();
+    }
+
+    function updateSidebar() {
+      const title = TABS[currentTab].label;
+      document.getElementById('sidebarTitle').textContent = title;
+
+      const list = state[currentTab] || [];
+      const sidebarList = document.getElementById('sidebarList');
+      sidebarList.innerHTML = '';
+
+      if (list.length === 0) {
+        sidebarList.innerHTML = '<div class="empty" style="height: auto; padding: 20px; text-align: center; font-size: 12px; color: var(--muted);">Aucun élément</div>';
+        return;
+      }
+
+      list.forEach(conv => {
+        const div = document.createElement('div');
+        div.className = `conv ${conv.id === currentConvId ? 'active' : ''}`;
+        div.onclick = () => openConversation(conv.id);
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = initials(conv.title || conv.question || conv.name || 'U');
+
+        const info = document.createElement('div');
+        info.className = 'conv-info';
+
+        const title = document.createElement('div');
+        title.className = 'conv-title';
+        title.textContent = conv.title || conv.question || 'Sans titre';
+
+        // Badge des messages non lus
+        const unreadCount = (conv.messages || []).filter(m => !m.read && m.authorId !== state.me.id).length;
+        if (unreadCount > 0) {
+          const badge = document.createElement('span');
+          badge.style.cssText = 'background: #ff6b6b; color: white; font-size: 10px; padding: 2px 4px; border-radius: 6px; margin-left: auto; margin-top: 2px;';
+          badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+          info.appendChild(badge);
+        }
+
+        const preview = document.createElement('div');
+        preview.className = 'conv-preview';
+        
+        // Logique intelligente de preview selon le type
+        if (currentTab === 'docs') {
+          preview.textContent = conv.uploader ? `Par ${conv.uploader}` : 'Document';
+        } else if (currentTab === 'events') {
+          const eventDate = new Date(conv.when);
+          preview.textContent = `${eventDate.toLocaleDateString()} à ${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        } else if (currentTab === 'polls') {
+          const totalVotes = conv.options ? conv.options.reduce((sum, opt) => sum + opt.votes, 0) : 0;
+          preview.textContent = `${totalVotes} vote${totalVotes !== 1 ? 's' : ''}`;
+        } else if (currentTab === 'board') {
+          preview.textContent = `Priorité: ${conv.priority === 'urgent' ? '🔴' : conv.priority === 'important' ? '🟠' : '⚪'}`;
+        } else if (currentTab === 'forum') {
+          const responses = (conv.messages && conv.messages.length) || 0;
+          preview.textContent = `${responses} réponse${responses !== 1 ? 's' : ''}`;
+        } else if (conv.messages && conv.messages.length > 0) {
+          const last = conv.messages[conv.messages.length - 1];
+          preview.textContent = (last.text || last.fileName || 'Contenu').slice(0, 50);
+        } else {
+          preview.textContent = 'Aucun contenu';
+        }
+
+        info.appendChild(title);
+        info.appendChild(preview);
+
+        const time = document.createElement('div');
+        time.className = 'conv-time';
+        time.textContent = formatTime(conv.lastTs || conv.ts || Date.now());
+
+        div.appendChild(avatar);
+        div.appendChild(info);
+        div.appendChild(time);
+        sidebarList.appendChild(div);
+      });
+    }
+
+    function updateChat() {
+      const list = state[currentTab] || [];
+      const conv = list.find(c => c.id === currentConvId);
+
+      const composerRow = document.getElementById('composerRow');
+      const messagesList = document.getElementById('messagesList');
+
+      if (!conv) {
+        document.getElementById('chatTitle').textContent = 'Sélectionner une conversation';
+        document.getElementById('chatStatus').textContent = '';
+        document.getElementById('chatAvatar').textContent = '—';
+        messagesList.innerHTML = '<div class="empty">Aucune conversation sélectionnée</div>';
+        composerRow.style.display = 'none';
+        return;
+      }
+
+      document.getElementById('chatTitle').textContent = conv.title || 'Conversation';
+      document.getElementById('chatAvatar').textContent = initials(conv.title || 'U');
+      composerRow.style.display = 'flex';
+
+      if (currentTab === 'private') {
+        document.getElementById('chatStatus').textContent = 'En ligne';
+      } else {
+        document.getElementById('chatStatus').textContent = '';
+      }
+
+      renderMessages(conv);
+    }
+
+    function renderMessages(conv) {
+      const messagesList = document.getElementById('messagesList');
+      messagesList.innerHTML = '';
+
+      if (!conv.messages || conv.messages.length === 0) {
+        messagesList.innerHTML = '<div class="empty">Aucun message</div>';
+        return;
+      }
+
+      let lastAuthor = '';
+      conv.messages.forEach((msg, idx) => {
+        const div = document.createElement('div');
+        div.className = `msg ${msg.authorId === state.me.id ? 'me' : 'other'}`;
+
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+
+        if (msg.author !== lastAuthor) {
+          const author = document.createElement('span');
+          author.className = 'msg-author';
+          author.textContent = msg.author;
+          meta.appendChild(author);
+          lastAuthor = msg.author;
+        }
+
+        const time = document.createElement('span');
+        time.className = 'msg-time';
+        time.textContent = formatTime(msg.ts);
+        meta.appendChild(time);
+
+        const content = document.createElement('div');
+        content.className = 'msg-content';
+
+        if (msg.text) {
+          content.innerHTML = escapeHtml(msg.text).replace(/\n/g, '<br>');
+        }
+
+        if (msg.dataUrl) {
+          if (msg.dataUrl.startsWith('data:image') || msg.dataUrl.startsWith('https://')) {
+            const img = document.createElement('img');
+            img.src = msg.dataUrl;
+            img.className = 'msg-image';
+            content.appendChild(img);
+          } else {
+            const link = document.createElement('a');
+            link.href = msg.dataUrl;
+            link.textContent = msg.fileName || 'Fichier';
+            link.className = 'msg-file';
+            link.download = msg.fileName || 'file';
+            content.appendChild(link);
+          }
+        }
+
+        // Réactions sur le message
+        const reactionsDiv = document.createElement('div');
+        reactionsDiv.style.cssText = 'margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; font-size: 12px;';
+        if (msg.reactions) {
+          Object.entries(msg.reactions).forEach(([emoji, count]) => {
+            const react = document.createElement('span');
+            react.style.cssText = 'background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 8px; cursor: pointer;';
+            react.textContent = `${emoji} ${count}`;
+            react.title = 'Cliquer pour réagir';
+            react.onclick = (e) => {
+              e.stopPropagation();
+              toggleReaction(conv.id, idx, emoji);
+            };
+            reactionsDiv.appendChild(react);
+          });
+        }
+
+        div.appendChild(meta);
+        div.appendChild(content);
+        if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+          div.appendChild(reactionsDiv);
+        }
+
+        // Boutons d'action si c'est mon message
+        if (msg.authorId === state.me.id) {
+          const actions = document.createElement('div');
+          actions.style.cssText = 'margin-top: 6px; display: flex; gap: 6px; font-size: 11px;';
+          
+          const editBtn = document.createElement('button');
+          editBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: none; color: var(--muted); cursor: pointer; padding: 2px 6px; border-radius: 4px;';
+          editBtn.textContent = '✏️ Éditer';
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            editMessage(conv.id, idx);
+          };
+          
+          const deleteBtn = document.createElement('button');
+          deleteBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: none; color: #ff6b6b; cursor: pointer; padding: 2px 6px; border-radius: 4px;';
+          deleteBtn.textContent = '🗑️ Supprimer';
+          deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteMessage(conv.id, idx);
+          };
+
+          actions.appendChild(editBtn);
+          actions.appendChild(deleteBtn);
+          div.appendChild(actions);
+        }
+
+        messagesList.appendChild(div);
+      });
+
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    function toggleReaction(convId, msgIdx, emoji) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      const msg = conv.messages[msgIdx];
+      if (!msg.reactions) msg.reactions = {};
+
+      if (msg.reactions[emoji]) {
+        msg.reactions[emoji]++;
+      } else {
+        msg.reactions[emoji] = 1;
+      }
+
+      saveState();
+      renderMessages(conv);
+    }
+
+    function editMessage(convId, msgIdx) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      const msg = conv.messages[msgIdx];
+      const newText = prompt('Éditer le message:', msg.text);
+      if (newText !== null && newText.trim()) {
+        msg.text = newText.trim();
+        msg.edited = true;
+        saveState();
+        renderMessages(conv);
+      }
+    }
+
+    function deleteMessage(convId, msgIdx) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      if (confirm('Supprimer ce message?')) {
+        conv.messages.splice(msgIdx, 1);
+        saveState();
+        renderMessages(conv);
+      }
+    }
+
+    function openConversation(convId) {
+      currentConvId = convId;
+      updateSidebar();
+      updateChat();
+    }
+
+    // ========================================
+    // ROLE ACTIONS
+    // ========================================
+    async function initRoleActions() {
+      const role = state.role;
+      const actions = ROLE_ACTIONS[role] || [];
+      const container = document.getElementById('roleActions');
+      container.innerHTML = '';
+
+      if (actions.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      actions.forEach(action => {
+        const btn = document.createElement('button');
+        btn.className = 'btn primary';
+        btn.id = action.id;
+        btn.textContent = action.label;
+        btn.onclick = action.action;
+        container.appendChild(btn);
+      });
+    }
+
+    // ========================================
+    // MESSAGES
+    // ========================================
+    function sendMessage() {
+      if (!currentConvId) return;
+
+      const input = document.getElementById('messageInput');
+      const fileInput = document.getElementById('fileInput');
+      const text = input.value.trim();
+
+      if (!text && !fileInput.files[0]) return;
+
+      const msg = {
+        id: uid(),
+        author: state.me.name,
+        authorId: state.me.id,
+        text: text || '',
+        ts: Date.now(),
+        read: true
+      };
+
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === currentConvId);
+
+      if (!conv.messages) conv.messages = [];
+      conv.messages.push(msg);
+
+      conv.lastTs = Date.now();
+      input.value = '';
+      fileInput.value = '';
+
+      saveState();
+      renderMessages(conv);
+      updateSidebar();
+    }
+
+    // ========================================
+    // MODALS
+    // ========================================
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function openAddModal(tab) {
+      switch(tab) {
+        case 'private':
+          openModal('addPrivateModal');
+          break;
+        case 'groups':
+          openModal('addGroupModal');
+          break;
+        case 'forum':
+          openModal('addForumModal');
+          break;
+        case 'docs':
+          openModal('addDocsModal');
+          break;
+        case 'events':
+          openModal('addEventModal');
+          break;
+        case 'board':
+          openModal('addBoardModal');
+          break;
+        case 'polls':
+          openModal('addPollModal');
+          break;
+        default:
+          alert('Impossible d\'ajouter dans cet onglet');
+      }
+    }
+
+    async function submitPost() {
+      const text = document.getElementById('postText').value.trim();
+      const isPublic = document.getElementById('postPublic').checked;
+      const msgEl = document.getElementById('postMessage');
+
+      if (!text) {
+        msgEl.textContent = '❌ Message requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      const post = {
+        id: uid(),
+        title: text.slice(0, 50) + (text.length > 50 ? '...' : ''),
+        author: state.me.name,
+        content: text,
+        ts: Date.now(),
+        messages: []
+      };
+
+      if (isPublic) {
+        state.forum.unshift(post);
+        msgEl.textContent = '✓ Publié dans le forum!';
+      } else {
+        state.private.unshift({
+          ...post,
+          friendId: 'forum'
+        });
+        msgEl.textContent = '✓ Message publié!';
+      }
+
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('postText').value = '';
+        document.getElementById('postPublic').checked = false;
+        closeModal('postModal');
+        if (isPublic) switchTab('forum');
+        updateSidebar();
+      }, 1000);
+    }
+
+    async function submitAddPrivate() {
+      const name = document.getElementById('privateName').value.trim();
+      const msgEl = document.getElementById('addPrivateMessage');
+
+      if (!name) {
+        msgEl.textContent = '❌ Nom du contact requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      const convId = `private-${uid()}`;
+      state.private.push({
+        id: convId,
+        title: name,
+        messages: [],
+        lastTs: Date.now()
+      });
+
+      msgEl.textContent = '✓ Conversation créée!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('privateName').value = '';
+        closeModal('addPrivateModal');
+        updateSidebar();
+        openConversation(convId);
+      }, 800);
+    }
+
+    async function submitAddGroup() {
+      const name = document.getElementById('groupName').value.trim();
+      const desc = document.getElementById('groupDesc').value.trim();
+      const msgEl = document.getElementById('addGroupMessage');
+
+      if (!name) {
+        msgEl.textContent = '❌ Nom du groupe requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.groups.unshift({
+        id: uid(),
+        title: name,
+        desc,
+        members: [state.me.name],
+        messages: [],
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Groupe créé!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('groupName').value = '';
+        document.getElementById('groupDesc').value = '';
+        closeModal('addGroupModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitAddForum() {
+      const question = document.getElementById('forumQuestion').value.trim();
+      const msgEl = document.getElementById('addForumMessage');
+
+      if (!question) {
+        msgEl.textContent = '❌ Question requise';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.forum.unshift({
+        id: uid(),
+        question,
+        author: state.me.name,
+        messages: [],
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Question posée!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('forumQuestion').value = '';
+        closeModal('addForumModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitAddEvent() {
+      const name = document.getElementById('eventName').value.trim();
+      const when = document.getElementById('eventWhen').value;
+      const where = document.getElementById('eventWhere').value.trim();
+      const msgEl = document.getElementById('addEventMessage');
+
+      if (!name || !when || !where) {
+        msgEl.textContent = '❌ Tous les champs requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.events.unshift({
+        id: uid(),
+        name,
+        when,
+        where,
+        organizer: state.me.name,
+        attendees: [state.me.name],
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Événement créé!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('eventName').value = '';
+        document.getElementById('eventWhen').value = '';
+        document.getElementById('eventWhere').value = '';
+        closeModal('addEventModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitAddPoll() {
+      const question = document.getElementById('pollQuestion').value.trim();
+      const opt1 = document.getElementById('pollOpt1').value.trim();
+      const opt2 = document.getElementById('pollOpt2').value.trim();
+      const msgEl = document.getElementById('addPollMessage');
+
+      if (!question || !opt1 || !opt2) {
+        msgEl.textContent = '❌ Question et 2 options minimum requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.polls.unshift({
+        id: uid(),
+        question,
+        options: [
+          { text: opt1, votes: 0 },
+          { text: opt2, votes: 0 }
+        ],
+        creator: state.me.name,
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Sondage créé!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('pollQuestion').value = '';
+        document.getElementById('pollOpt1').value = '';
+        document.getElementById('pollOpt2').value = '';
+        closeModal('addPollModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitAddDocs() {
+      const title = document.getElementById('docsTitle').value.trim();
+      const url = document.getElementById('docsUrl').value.trim();
+      const desc = document.getElementById('docsDesc').value.trim();
+      const msgEl = document.getElementById('addDocsMessage');
+
+      if (!title || !url) {
+        msgEl.textContent = '❌ Titre et URL requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.docs.unshift({
+        id: uid(),
+        title,
+        url,
+        desc,
+        uploader: state.me.name,
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Document ajouté!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('docsTitle').value = '';
+        document.getElementById('docsUrl').value = '';
+        document.getElementById('docsDesc').value = '';
+        closeModal('addDocsModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitAddBoard() {
+      const title = document.getElementById('boardTitle').value.trim();
+      const content = document.getElementById('boardContent').value.trim();
+      const priority = document.getElementById('boardPriority').value;
+      const msgEl = document.getElementById('addBoardMessage');
+
+      if (!title || !content) {
+        msgEl.textContent = '❌ Titre et contenu requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.board.unshift({
+        id: uid(),
+        title,
+        content,
+        priority,
+        author: state.me.name,
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Annonce publiée!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('boardTitle').value = '';
+        document.getElementById('boardContent').value = '';
+        document.getElementById('boardPriority').value = 'normal';
+        closeModal('addBoardModal');
+        updateSidebar();
+      }, 800);
+    }
+
+    async function submitClassPost() {
+      const title = document.getElementById('classPostTitle').value.trim();
+      const content = document.getElementById('classPostContent').value.trim();
+      const target = document.getElementById('classPostTarget').value.trim();
+      const msgEl = document.getElementById('classPostMessage');
+
+      if (!title || !content || !target) {
+        msgEl.textContent = '❌ Tous les champs sont requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.forum.unshift({
+        id: uid(),
+        title,
+        author: state.me.name,
+        content,
+        target,
+        ts: Date.now(),
+        messages: []
+      });
+
+      msgEl.textContent = '✓ Publié pour la classe!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('classPostTitle').value = '';
+        document.getElementById('classPostContent').value = '';
+        document.getElementById('classPostTarget').value = '';
+        closeModal('classPostModal');
+        switchTab('forum');
+        updateSidebar();
+      }, 1000);
+    }
+
+    async function submitResource() {
+      const name = document.getElementById('resourceName').value.trim();
+      const type = document.getElementById('resourceType').value;
+      const url = document.getElementById('resourceUrl').value.trim();
+      const desc = document.getElementById('resourceDesc').value.trim();
+      const msgEl = document.getElementById('resourceMessage');
+
+      if (!name || !url) {
+        msgEl.textContent = '❌ Nom et URL requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.docs.unshift({
+        id: uid(),
+        title: name,
+        type,
+        url,
+        desc,
+        uploader: state.me.name,
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Ressource partagée!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('resourceName').value = '';
+        document.getElementById('resourceUrl').value = '';
+        document.getElementById('resourceDesc').value = '';
+        closeModal('resourceModal');
+        switchTab('docs');
+        updateSidebar();
+      }, 1000);
+    }
+
+    async function submitAnnounce() {
+      const title = document.getElementById('announceTitle').value.trim();
+      const text = document.getElementById('announceText').value.trim();
+      const priority = document.getElementById('announcePriority').value;
+      const msgEl = document.getElementById('announceMessage');
+
+      if (!title || !text) {
+        msgEl.textContent = '❌ Titre et contenu requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.board.unshift({
+        id: uid(),
+        title,
+        content: text,
+        author: state.me.name,
+        priority,
+        ts: Date.now()
+      });
+
+      msgEl.textContent = '✓ Annonce publiée!';
+      msgEl.style.color = '#51cf66';
+      saveState();
+
+      setTimeout(() => {
+        document.getElementById('announceTitle').value = '';
+        document.getElementById('announceText').value = '';
+        document.getElementById('announcePriority').value = 'normal';
+        closeModal('announceModal');
+        switchTab('board');
+        updateSidebar();
+      }, 1000);
+    }
+
+    async function submitDoc() {
+      const title = document.getElementById('docTitle').value.trim();
+      const url = document.getElementById('docUrl').value.trim();
+      const desc = document.getElementById('docDesc').value.trim();
+      const msgEl = document.getElementById('docMessage');
+
+      if (!title || !url) {
+        msgEl.textContent = '❌ Titre et URL requis';
+        msgEl.style.color = '#ff6b6b';
+        return;
+      }
+
+      state.docs.unshift({
+        id: uid(),
+        title,
+        url,
+        desc,
+        uploader: state.me.name,
+        ts: Date.now()
+      });
+
+      saveState();
+      msgEl.textContent = '✓ Document partagé!';
+      msgEl.style.color = '#51cf66';
+
+      setTimeout(() => {
+        document.getElementById('docTitle').value = '';
+        document.getElementById('docUrl').value = '';
+        document.getElementById('docDesc').value = '';
+        closeModal('docModal');
+        switchTab('docs');
+        updateSidebar();
+      }, 1000);
+    }
+
+    // ========================================
+    // HELPERS
+    // ========================================
+    const uid = () => Math.random().toString(36).slice(2, 9);
+    const initials = (name) => (name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+
+    const formatTime = (ts) => {
+      const d = (Date.now() - ts) / 1000;
+      if (d < 60) return "à l'instant";
+      if (d < 3600) return Math.round(d / 60) + ' min';
+      if (d < 86400) return Math.round(d / 3600) + ' h';
+      return new Date(ts).toLocaleString();
+    };
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    async function init() {
+      await loadUserRole();
+      await loadFriends();
+
+      initTabs();
+      initRoleActions();
+      updateSidebar();
+      updateChat();
+
+      document.getElementById('userInfo').textContent = `${state.me.name} (${state.role})`;
+
+      // Event listeners
+      document.getElementById('sendBtn').onclick = sendMessage;
+      document.getElementById('messageInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      document.getElementById('newConvBtn').onclick = () => {
+        openAddModal(currentTab);
+      };
+
+      // Initialiser la recherche
+      initSearch();
+    }
+
+    // ========================================
+    // SEARCH & FILTERING
+    // ========================================
+    let searchQuery = '';
+    let filteredResults = [];
+
+    function performSearch(query) {
+      searchQuery = query.toLowerCase();
+      filteredResults = [];
+
+      if (!searchQuery) {
+        updateSidebar();
+        return;
+      }
+
+      const list = state[currentTab] || [];
+      const matches = list.filter(conv => {
+        const title = (conv.title || conv.question || '').toLowerCase();
+        const content = (conv.content || '').toLowerCase();
+        const desc = (conv.desc || '').toLowerCase();
+        const where = (conv.where || '').toLowerCase();
+
+        // Recherche dans le titre/question
+        if (title.includes(searchQuery)) return true;
+
+        // Recherche dans le contenu
+        if (content.includes(searchQuery)) return true;
+
+        // Recherche dans les messages
+        if (conv.messages) {
+          return conv.messages.some(m => 
+            (m.text || '').toLowerCase().includes(searchQuery)
+          );
+        }
+
+        return false;
+      });
+
+      filteredResults = matches;
+      renderFilteredResults();
+    }
+
+    function renderFilteredResults() {
+      const sidebarList = document.getElementById('sidebarList');
+      sidebarList.innerHTML = '';
+
+      if (filteredResults.length === 0) {
+        sidebarList.innerHTML = `<div class="empty" style="height: auto; padding: 20px; text-align: center; font-size: 12px; color: var(--muted);">Aucun résultat pour "${searchQuery}"</div>`;
+        return;
+      }
+
+      filteredResults.forEach(conv => {
+        const div = document.createElement('div');
+        div.className = `conv ${conv.id === currentConvId ? 'active' : ''}`;
+        div.onclick = () => openConversation(conv.id);
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = initials(conv.title || conv.question || 'U');
+
+        const info = document.createElement('div');
+        info.className = 'conv-info';
+
+        const title = document.createElement('div');
+        title.className = 'conv-title';
+        const titleText = conv.title || conv.question || 'Sans titre';
+        
+        // Surligner les termes recherchés
+        const regex = new RegExp(`(${searchQuery})`, 'gi');
+        title.innerHTML = titleText.replace(regex, '<span style="background: rgba(11,132,255,0.3);">$1</span>');
+
+        const preview = document.createElement('div');
+        preview.className = 'conv-preview';
+        preview.textContent = conv.content || conv.messages?.length + ' messages' || 'Pas de contenu';
+
+        info.appendChild(title);
+        info.appendChild(preview);
+        div.appendChild(avatar);
+        div.appendChild(info);
+        sidebarList.appendChild(div);
+      });
+    }
+
+    function initSearch() {
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          performSearch(e.target.value);
+        });
+      }
+    }
+
+    // Seed demo data if empty
+    if (state.private.length === 0) {
+      state.private.push({
+        id: uid(),
+        title: 'Alice',
+        messages: [
+          {
+            id: uid(),
+            author: 'Alice',
+            authorId: 'alice',
+            text: 'Salut! Comment ça va?',
+            ts: Date.now() - 3600000,
+            read: false
+          },
+          {
+            id: uid(),
+            author: state.me.name,
+            authorId: state.me.id,
+            text: 'Salut Alice! Ça va bien!',
+            ts: Date.now() - 3500000,
+            read: true
+          }
+        ],
+        lastTs: Date.now() - 3500000
+      });
+      saveState();
+    }
+
+    // ========================================
+    // MODERATION & ADVANCED FEATURES
+    // ========================================
+    function moderateMessage(convId, msgIdx) {
+      const actions = [
+        '✏️ Éditer',
+        '⚠️ Signaler',
+        '❌ Supprimer',
+        '🔇 Bloquer utilisateur',
+        'Annuler'
+      ];
+
+      const choice = prompt(
+        'Actions de modération:\n' + actions.map((a, i) => `${i+1}. ${a}`).join('\n') + '\n\nChoix (1-5):',
+        '3'
+      );
+
+      if (!choice || choice === '5') return;
+
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      const msg = conv.messages[msgIdx];
+
+      switch(choice) {
+        case '1':
+          editMessage(convId, msgIdx);
+          break;
+        case '2':
+          reportMessage(convId, msgIdx);
+          break;
+        case '3':
+          deleteMessage(convId, msgIdx);
+          break;
+        case '4':
+          blockUser(msg.author);
+          break;
+      }
+    }
+
+    function reportMessage(convId, msgIdx) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv || !conv.messages[msgIdx]) return;
+
+      const msg = conv.messages[msgIdx];
+      const reason = prompt(
+        'Raison du signalement:\n\n' +
+        '1. Spam\n' +
+        '2. Contenu offensant\n' +
+        '3. Harcèlement\n' +
+        '4. Autre\n\n' +
+        'Entrez votre raison:'
+      );
+
+      if (reason) {
+        msg.reported = {
+          by: state.me.name,
+          reason,
+          ts: Date.now(),
+          status: 'pending'
+        };
+        saveState();
+        alert('✓ Message signalé. Les modérateurs vont examiner cela.');
+      }
+    }
+
+    function blockUser(username) {
+      if (confirm(`Êtes-vous sûr de vouloir bloquer ${username}?`)) {
+        if (!state.blocked) state.blocked = [];
+        state.blocked.push(username);
+        saveState();
+        alert(`✓ ${username} a été bloqué.`);
+        updateSidebar();
+      }
+    }
+
+    function unblockUser(username) {
+      if (!state.blocked) return;
+      state.blocked = state.blocked.filter(u => u !== username);
+      saveState();
+      alert(`✓ ${username} a été débloqué.`);
+    }
+
+    function pinConversation(convId) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv) return;
+
+      conv.pinned = !conv.pinned;
+      if (conv.pinned) {
+        list.unshift(list.splice(list.indexOf(conv), 1)[0]);
+      }
+      saveState();
+      updateSidebar();
+    }
+
+    function archiveConversation(convId) {
+      const list = state[currentTab];
+      const convIdx = list.findIndex(c => c.id === convId);
+      if (convIdx === -1) return;
+
+      if (!state.archived) state.archived = {};
+      if (!state.archived[currentTab]) state.archived[currentTab] = [];
+
+      const conv = list[convIdx];
+      conv.archived = true;
+      state.archived[currentTab].push(conv);
+      list.splice(convIdx, 1);
+
+      saveState();
+      updateSidebar();
+      alert('✓ Conversation archivée');
+    }
+
+    function exportConversation(convId) {
+      const list = state[currentTab];
+      const conv = list.find(c => c.id === convId);
+      if (!conv) return;
+
+      const json = JSON.stringify(conv, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${conv.title || 'export'}-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Stats & Analytics
+    function getConversationStats() {
+      const list = state[currentTab] || [];
+      const stats = {
+        total: list.length,
+        unread: list.reduce((sum, c) => sum + (c.messages?.filter(m => !m.read && m.authorId !== state.me.id).length || 0), 0),
+        archived: (state.archived?.[currentTab]?.length || 0),
+        pinned: list.filter(c => c.pinned).length
+      };
+      return stats;
+    }
+
+    function displayStats() {
+      const stats = getConversationStats();
+      const msg = `📊 Stats pour "${TABS[currentTab].label}":\n\n` +
+        `Total: ${stats.total}\n` +
+        `Non lus: ${stats.unread}\n` +
+        `Épinglés: ${stats.pinned}\n` +
+        `Archivés: ${stats.archived}`;
+      alert(msg);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

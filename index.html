@@ -58,19 +58,13 @@
                     </div>
                 </div>
                 <nav class="menu">
-                  <!-- Les liens dirigent vers les ID de section -->
-                  <button id="feed-btn" onclick="showTab('feed')">🏠 Fil</button>
-                  <button id="messages-btn" onclick="showTab('messages')">💬 Messages</button>
-                  <button id="friends-btn" onclick="showTab('friends')">👥 Amis</button>
-
-
-                  <button id="profile-btn" onclick="location.href='profil.html'">🧾 Profil</button>
-                  <button id="messages-btn" onclick="location.href='message.html'">🧾 Messages</button>
-                  <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                  <!-- Navigation cohérente : onglets internes avec showTab() -->
+                  <button id="feed-btn" onclick="showTab('feed')">🏠 Fil d'actualité</button>
+                  <button id="messages-btn" onclick="location.href='frontend/pages/message-v2.html'">💬 Messagerie</button>
+                                    <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                                    <button id="profile-btn" onclick="goToProfile()">👤 Profil</button>
                   <button id="constellation-btn" onclick="location.href='constellation.html'">🌌 Constellation</button>
                   <button id="settings-btn" onclick="location.href='page_parametre.html'">⚙️ Paramètres</button>
-                  
-
                 </nav>
             </div>
 
@@ -82,8 +76,9 @@
                     <div class="muted">en local</div>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:10px">
-                    <div class="pill">Posts <div id="statPosts" style="font-weight:700">0</div></div>
-                    <div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
+					<div class="pill" style="cursor:pointer" onclick="showAllPosts()">Tous</div>
+					<div class="pill" style="cursor:pointer" onclick="showMyPosts()">Posts <div id="statPosts" style="font-weight:700">0</div></div>
+					<div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
                 </div>
             </div>
         </aside>
@@ -91,13 +86,30 @@
         <!-- MIDDLE: FEED -->
         <main id="feed-tab" class="tab-content active">
             <div class="card composer">
-                <textarea id="composer" placeholder="Quoi de neuf ?"></textarea>
-                <div class="row">
-                    <div class="small muted">Vous pouvez publier du texte et des hashtags (#) — prototype.</div>
-                    <div style="display:flex;gap:8px">
+                <div class="composer-header">
+                    <div class="composer-avatar" id="composer-avatar">U</div>
+                    <div class="composer-meta">
+                        <div class="composer-greeting" id="composer-greeting">Exprime-toi, étudiant ESME ✨</div>
+                        <div class="small muted composer-sub">Partage une pensée, une photo ou un moment de ta vie sur le campus.</div>
+                    </div>
+                </div>
+                <textarea id="composer" placeholder="Quoi de neuf aujourd'hui ?"></textarea>
+                <div class="composer-toolbar">
+                    <div class="composer-actions-left">
+                        <div class="small muted">Tu peux publier du texte, des liens et une photo depuis ton appareil.</div>
+                        <label class="image-upload-pill">
+                            <input type="file" id="imageFileInput" accept="image/*" />
+                            📷 Ajouter une photo
+                        </label>
+                    </div>
+                    <div class="composer-actions-right">
                         <button class="btn" id="clearBtn">Effacer</button>
                         <button class="btn" id="publishBtn">Publier</button>
                     </div>
+                </div>
+                <div id="imagePreviewContainer" class="image-preview" style="display:none">
+                    <img id="imagePreview" alt="Prévisualisation de la photo" />
+                    <button type="button" class="btn btn-small" id="removeImageBtn">Retirer la photo</button>
                 </div>
             </div>
 
@@ -239,6 +251,7 @@
         
         let currentUser = null; // Informations utilisateur (ID, nom, prénom, etc.)
         let is_authenticated = false;
+        let realFriendsCount = 0; // Nombre d'amis issus de l'API /ami/friends
 
         // Éléments du DOM principaux
         const appWrap = document.getElementById('app-wrap');
@@ -325,7 +338,8 @@ window.goToProfile = function() {
 
             // Lancer l'action spécifique à l'onglet
             if (tabId === 'feed') {
-                renderFeed();
+                // Toujours recharger depuis l'API pour voir les vrais posts (et leurs images)
+                loadFeedFromAPI();
             } else if (tabId === 'profile' && currentUser) {
                 fetchUserProfile();
             }
@@ -387,6 +401,9 @@ window.goToProfile = function() {
                     // On force l'affichage du fil d'actu après connexion
                     showTab('feed');
 
+                    // Synchroniser les statistiques d'amis avec l'API
+                    loadFriendsStats();
+
                 } catch (e) {
                     console.error("Erreur parsing user:", e);
                     logout(); // Problème de données, on déconnecte
@@ -403,6 +420,9 @@ window.goToProfile = function() {
                 myAvatarEl.textContent = 'U?';
                 leftColumn.style.display = 'none';
                 document.getElementById('logoutBtn').style.display = 'none';
+
+                realFriendsCount = 0;
+                updateStats();
             }
         }
         
@@ -486,12 +506,12 @@ window.goToProfile = function() {
 
         /**
          * Déconnexion de l'utilisateur.
+         * Après la déconnexion, on retourne sur la page login.html.
          */
         window.logout = function() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            showMessage('Déconnecté avec succès.', 'success');
-            updateUI(); // Retourne à la vue de connexion
+            window.location.href = 'login.html';
         }
         
         // ====================================================================
@@ -553,15 +573,43 @@ window.goToProfile = function() {
         // UTILITAIRES DE GESTION DU STOCKAGE LOCAL (pour les posts/amis)
         // ====================================================================
         
-        // IMPORTANT : Ces fonctions utilisent encore localStorage pour simuler les posts et amis.
-        // Elles devront être remplacées par des appels API pour une vraie persistance.
+        // IMPORTANT : Ces fonctions utilisent encore localStorage pour simuler les posts.
+        // Le compteur d'amis, lui, est désormais basé sur l'API réelle /ami/friends.
 
         function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(localState)); updateStats(); }
         function load(){ const s = localStorage.getItem(STORAGE_KEY); if(s){ try{localState=JSON.parse(s);}catch(e){console.warn(e)} } updateStats(); }
         function updateStats(){ 
             document.getElementById('statPosts').textContent = localState.posts.length; 
-            document.getElementById('statFriends').textContent = localState.friends.length; 
+            document.getElementById('statFriends').textContent = realFriendsCount; 
             document.getElementById('notifCount').textContent = localState.notifications.length; 
+        }
+
+        // Charge le nombre d'amis réels via l'API /ami/friends pour synchroniser avec ami.html
+        async function loadFriendsStats() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                realFriendsCount = 0;
+                updateStats();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/ami/friends`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const friends = await res.json();
+                    realFriendsCount = Array.isArray(friends) ? friends.length : 0;
+                } else {
+                    realFriendsCount = 0;
+                }
+            } catch (e) {
+                console.error('Erreur chargement amis (stats):', e);
+                realFriendsCount = 0;
+            }
+
+            updateStats();
         }
         function uid(){ return Math.random().toString(36).slice(2,9); }
         function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -576,6 +624,49 @@ window.goToProfile = function() {
         const publishBtn = document.getElementById('publishBtn');
         const clearBtn = document.getElementById('clearBtn');
         const suggestionsEl = document.getElementById('suggestions');
+        const imageFileInput = document.getElementById('imageFileInput');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        let currentImageData = null; // dataURL de l'image sélectionnée
+
+        // Prévisualisation de l'image à partir du fichier choisi
+        if (imageFileInput && imagePreview && imagePreviewContainer) {
+            imageFileInput.addEventListener('change', () => {
+                const file = imageFileInput.files && imageFileInput.files[0];
+                if (!file) {
+                    currentImageData = null;
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                    return;
+                }
+
+                // Optionnel : limiter la taille (ex. 3 Mo)
+                const MAX_SIZE = 3 * 1024 * 1024;
+                if (file.size > MAX_SIZE) {
+                    showMessage('Image trop lourde (max 3 Mo).', 'error');
+                    imageFileInput.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentImageData = e.target.result;
+                    imagePreview.src = currentImageData;
+                    imagePreviewContainer.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (removeImageBtn && imagePreview && imagePreviewContainer && imageFileInput) {
+            removeImageBtn.addEventListener('click', () => {
+                currentImageData = null;
+                imageFileInput.value = '';
+                imagePreview.src = '';
+                imagePreviewContainer.style.display = 'none';
+            });
+        }
 
         function renderFeed(filter=""){ 
             feedEl.innerHTML='';
@@ -584,10 +675,13 @@ window.goToProfile = function() {
             if(posts.length===0){ document.getElementById('emptyFeed').style.display='block'; return } else document.getElementById('emptyFeed').style.display='none';
             posts.forEach(p=>{
                 const el = document.createElement('article'); el.className='post';
+                const imageSrc = p.imageUrl || p.imageData;
+                const imageHtml = imageSrc ? `<div class="post-image"><img src="${escapeHtml(imageSrc)}" alt="Photo publiée" loading="lazy" /></div>` : '';
                 el.innerHTML = `
                     <div class="meta"><div class="avatar">${p.authorInitials||'U'}</div>
                     <div><div class="name">${escapeHtml(p.authorName||(currentUser?.first_name ? currentUser.first_name + ' ' + currentUser.last_name : currentUser?.username || 'Demo'))} <span class="small muted">${p.authorHandle||(currentUser?.username ? '@'+currentUser.username : '@demo')} · ${new Date(p.ts).toLocaleString()}</span></div></div></div>
                     <div class="content">${linkify(escapeHtml(p.text))}</div>
+                    ${imageHtml}
                     <div class="actions small">
                         <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
                         <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
@@ -620,7 +714,7 @@ window.goToProfile = function() {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ content: text })
+                    body: JSON.stringify({ content: text, imageData: currentImageData || null })
                 });
 
                 if (!response.ok) {
@@ -628,11 +722,39 @@ window.goToProfile = function() {
                     return showMessage(error.message || 'Erreur lors de la publication');
                 }
 
+                // Récupérer le post créé depuis la réponse pour l'ajouter directement au state local
+                const data = await response.json().catch(() => null);
+                if (data && data.post) {
+                    const p = data.post;
+                    const mappedPost = {
+                        id: p.id,
+                        userId: p.user_id,
+                        text: p.content,
+                        ts: new Date(p.created_at).getTime(),
+                        likes: 0,
+                        comments: [],
+                        authorName: p.username || (currentUser.first_name || currentUser.username || 'Moi'),
+                        authorHandle: `@${currentUser.username || 'moi'}`,
+                        authorInitials: getInitials(currentUser.first_name ? `${currentUser.first_name} ${currentUser.last_name || ''}` : currentUser.username || 'M'),
+                        imageUrl: p.image_url || null,
+                        imageData: p.image_data || currentImageData || null
+                    };
+                    // Ajouter en tête de liste
+                    localState.posts.unshift(mappedPost);
+                    save();
+                }
+
                 // Succès: vider le formulaire
                 composer.value = '';
+                if (imageFileInput && imagePreviewContainer && imagePreview) {
+                    currentImageData = null;
+                    imageFileInput.value = '';
+                    imagePreview.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                }
                 showMessage('Votre post a été publié', 'success');
 
-                // Recharger le fil d'actualité après un court délai
+                // Recharger le fil d'actualité après un court délai (synchronisation)
                 setTimeout(() => loadFeedFromAPI(), 500);
 
             } catch (error) {
@@ -642,7 +764,41 @@ window.goToProfile = function() {
         });
         clearBtn.addEventListener('click', ()=>composer.value='');
 
-        function deletePost(id){ if(!confirm('Supprimer ce post ?')) return; localState.posts = localState.posts.filter(p=>p.id!==id); save(); renderFeed(); }
+        async function deletePost(id){
+            if (!is_authenticated) {
+                return showAuthView('login');
+            }
+            if (!confirm('Supprimer ce post ?')) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    return showAuthView('login');
+                }
+
+                const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    return showMessage(result.message || 'Impossible de supprimer ce post.', 'error');
+                }
+
+                // Mise à jour locale: retirer le post du state puis recharger depuis l'API
+                localState.posts = localState.posts.filter(p => String(p.id) !== String(id));
+                save();
+                showMessage(result.message || 'Post supprimé.', 'success');
+                setTimeout(() => loadFeedFromAPI(), 300);
+            } catch (error) {
+                console.error('Erreur suppression post:', error);
+                showMessage('Erreur de connexion au serveur lors de la suppression.', 'error');
+            }
+        }
         function toggleLike(id){ const p=localState.posts.find(x=>x.id===id); if(!p) return; p.likes=(p.likes||0)+1; save(); renderFeed(); }
         function openComments(id){ const cEl=document.getElementById('comments-'+id); if(!cEl) return; cEl.style.display=cEl.style.display==='none'?'block':'none'; if(cEl.innerHTML===''){ const p=localState.posts.find(x=>x.id===id); cEl.innerHTML=renderCommentsSection(p); } }
         function renderCommentsSection(post){ return `<div style="display:flex;gap:8px"><input id="cinput-${post.id}" style="flex:1;padding:8px;border-radius:8px;border:0;background:var(--glass)" placeholder="Écrire un commentaire..." /><button class="btn" onclick='addComment("${post.id}")'>Envoyer</button></div><div style="margin-top:8px">${(post.comments||[]).map(c=>`<div class="small" style="padding:6px 0;border-top:1px dashed rgba(255,255,255,0.02)"><strong>${escapeHtml(c.author)}</strong> <span class="muted">· ${new Date(c.ts).toLocaleString()}</span><div>${escapeHtml(c.text)}</div></div>`).join('')}</div>` }
@@ -680,13 +836,16 @@ window.goToProfile = function() {
                 // Formater les posts depuis l'API
                 localState.posts = posts.map(post => ({
                     id: post.id,
+                    userId: post.user_id,
                     text: post.content,
                     ts: new Date(post.created_at).getTime(),
                     likes: 0,
                     comments: [],
                     authorName: post.username || 'Utilisateur',
                     authorHandle: `@${post.username || 'user'}`,
-                    authorInitials: (post.username || 'U').substring(0, 2).toUpperCase()
+                    authorInitials: (post.username || 'U').substring(0, 2).toUpperCase(),
+                    imageUrl: post.image_url || null,
+                    imageData: post.image_data || null
                 }));
 
                 renderFeed();
@@ -694,7 +853,100 @@ window.goToProfile = function() {
                 console.error('Erreur chargement fil:', error);
             }
         }
+        
+        // Afficher tous les posts (annule le filtre "Mes posts")
+        function showAllPosts(){
+            if (!is_authenticated) {
+                showAuthView('login');
+                return;
+            }
 
+            const emptyFeedEl = document.getElementById('emptyFeed');
+            if (emptyFeedEl) {
+                emptyFeedEl.textContent = 'Aucun post pour l\'instant — soyez le premier !';
+            }
+
+            // On recharge la timeline complète depuis l'API pour voir tous les posts
+            loadFeedFromAPI();
+        }
+        /* =======================
+           🔥 FILTRER MES POSTS
+        ======================= */
+        function showMyPosts(){
+            // Si pas connecté, on ouvre la fenêtre de connexion
+            if (!is_authenticated) {
+                showAuthView('login');
+                return;
+            }
+
+            if (!currentUser) {
+                updateUI();
+                if (!currentUser) return;
+            }
+
+            const emptyFeedEl = document.getElementById('emptyFeed');
+
+            // Filtrer les posts dont l'auteur est l'utilisateur connecté
+            // 1) Par userId (posts venant de la base)
+            // 2) Ou par handle / nom (anciens posts locaux ou exemples)
+            const username = (currentUser.username || '').toLowerCase();
+            const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim().toLowerCase();
+
+            const myPosts = localState.posts.filter(p => {
+                const sameId = p.userId != null && currentUser.id != null && String(p.userId) === String(currentUser.id);
+
+                const handle = (p.authorHandle || '').toLowerCase();
+                const name = (p.authorName || '').toLowerCase();
+                const sameHandle = username && handle === `@${username}`;
+                const sameName = fullName && name.includes(fullName);
+
+                return sameId || sameHandle || sameName;
+            });
+
+            feedEl.innerHTML = '';
+
+            if (myPosts.length === 0) {
+                if (emptyFeedEl) {
+                    emptyFeedEl.textContent = "Vous n'avez encore publié aucun post. Publiez-en un pour le voir ici.";
+                    emptyFeedEl.style.display = 'block';
+                }
+                return;
+            }
+
+            if (emptyFeedEl) {
+                emptyFeedEl.textContent = 'Aucun post pour l\'instant — soyez le premier !';
+                emptyFeedEl.style.display = 'none';
+            }
+
+            myPosts
+                .sort((a,b)=>b.ts-a.ts)
+                .forEach(p => {
+                    const el = document.createElement('article');
+                    el.className = 'post';
+
+                    const imageSrc = p.imageUrl || p.imageData;
+                    const imageHtml = imageSrc ? `<div class="post-image"><img src="${escapeHtml(imageSrc)}" alt="Photo publiée" loading="lazy" /></div>` : '';
+
+                    const authorName = p.authorName || (currentUser.first_name || currentUser.username || 'Utilisateur');
+                    const authorHandle = p.authorHandle || `@${currentUser.username || 'user'}`;
+
+                    el.innerHTML = `
+                        <div class="meta"><div class="avatar">${p.authorInitials||'U'}</div>
+                        <div><div class="name">${escapeHtml(authorName)} <span class="small muted">${authorHandle} · ${new Date(p.ts).toLocaleString()}</span></div></div></div>
+                        <div class="content">${linkify(escapeHtml(p.text))}</div>
+                        ${imageHtml}
+                        <div class="actions small">
+                            <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
+                            <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
+                            <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
+                            <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
+                        </div>
+                        <div id="comments-${p.id}" style="margin-top:8px;display:none"></div>
+                    `;
+
+                    feedEl.appendChild(el);
+                });
+        }
         // =======================
         // INITIALISATION
         // =======================
