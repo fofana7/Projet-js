@@ -34,7 +34,7 @@ exports.getTimeline = async (req, res) => {
         const result = await pool.query(
             `SELECT 
                 p.id, p.content, p.image_url, p.image_data, p.created_at, 
-                u.id AS user_id, u.username, COALESCE(u.avatarurl, 'https://i.pravatar.cc/150') AS avatarurl 
+                u.id AS user_id, u.username, u.first_name, u.last_name, u.avatarurl 
             FROM posts p
             JOIN users u ON p.user_id = u.id
             WHERE 
@@ -60,6 +60,36 @@ exports.getTimeline = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur serveur lors de la récupération du fil." });
+    }
+};
+
+// 2b. Récupérer tous les posts d'un utilisateur spécifique
+exports.getUserPosts = async (req, res) => {
+    const userId = parseInt(req.params.userId, 10);
+    
+    if (Number.isNaN(userId)) {
+        return res.status(400).json({ message: "ID utilisateur invalide." });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT 
+                p.id, p.content, p.image_url, p.image_data, p.created_at, 
+                u.id AS user_id, u.username, u.first_name, u.last_name, 
+                u.avatarurl,
+                (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
+                (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = $1
+            ORDER BY p.created_at DESC
+            LIMIT 50`,
+            [userId]
+        );
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur serveur lors de la récupération des posts." });
     }
 };
 
@@ -103,17 +133,32 @@ exports.likePost = async (req, res) => {
     }
 
     try {
-        // Vérifier que le post existe
-        const postCheck = await pool.query('SELECT id FROM posts WHERE id = $1', [postId]);
+        // Vérifier que le post existe ET récupérer l'auteur
+        const postCheck = await pool.query('SELECT id, user_id FROM posts WHERE id = $1', [postId]);
         if (postCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Post introuvable.' });
         }
+        
+        const postAuthorId = postCheck.rows[0].user_id;
 
         // Ajouter le like
         const result = await pool.query(
             'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) RETURNING *',
             [postId, userId]
         );
+
+        // Créer une notification si ce n'est pas l'auteur du post qui like
+        if (postAuthorId !== userId) {
+            try {
+                await pool.query(
+                    'INSERT INTO like_notifications (post_id, from_user_id, to_user_id) VALUES ($1, $2, $3)',
+                    [postId, userId, postAuthorId]
+                );
+            } catch (notifError) {
+                console.error('Erreur création notification like:', notifError);
+                // Continuer même si la notification échoue
+            }
+        }
 
         res.status(201).json({ message: 'Post aimé', like: result.rows[0] });
     } catch (error) {
@@ -185,17 +230,34 @@ exports.addComment = async (req, res) => {
     }
 
     try {
-        // Vérifier que le post existe
-        const postCheck = await pool.query('SELECT id FROM posts WHERE id = $1', [postId]);
+        // Vérifier que le post existe ET récupérer l'auteur
+        const postCheck = await pool.query('SELECT id, user_id FROM posts WHERE id = $1', [postId]);
         if (postCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Post introuvable.' });
         }
+        
+        const postAuthorId = postCheck.rows[0].user_id;
 
         // Ajouter le commentaire
         const result = await pool.query(
             'INSERT INTO post_comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING *',
             [postId, userId, content]
         );
+        
+        const commentId = result.rows[0].id;
+
+        // Créer une notification si ce n'est pas l'auteur du post qui commente
+        if (postAuthorId !== userId) {
+            try {
+                await pool.query(
+                    'INSERT INTO comment_notifications (post_id, from_user_id, to_user_id, comment_id) VALUES ($1, $2, $3, $4)',
+                    [postId, userId, postAuthorId, commentId]
+                );
+            } catch (notifError) {
+                console.error('Erreur création notification commentaire:', notifError);
+                // Continuer même si la notification échoue
+            }
+        }
 
         res.status(201).json({ message: 'Commentaire ajouté', comment: result.rows[0] });
     } catch (error) {

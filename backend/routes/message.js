@@ -19,4 +19,11 @@ router.post("/send", protect, requireRole(['eleve', 'enseignant']), messageContr
 // POST /api/messages/:userId/archive - Archiver une conversation
 router.post("/:userId/archive", protect, messageController.archiveConversation);
 
+// === MESSAGES DE GROUPE ===
+// GET /api/messages/group/:groupId - Récupérer les messages d'un groupe
+router.get("/group/:groupId", protect, messageController.getGroupMessages);
+
+// POST /api/messages/group/send - Envoyer un message à un groupe
+router.post("/group/send", protect, messageController.sendGroupMessage);
+
 module.exports = router;

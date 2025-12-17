@@ -54,23 +54,102 @@ exports.listEvents = async (req, res) => {
 
 // Announcements
 exports.createAnnouncement = async (req, res) => {
-  const { title, content, author } = req.body;
+  const { title, content, author, class_name } = req.body;
+  const userId = req.user?.id;
   if (!title || !content) return res.status(400).json({ error: 'title and content required' });
   try {
+    // Créer l'annonce
     const result = await pool.query(
-      'INSERT INTO announcements (title, content, author, created_at) VALUES ($1,$2,$3,NOW()) RETURNING *',
-      [title, content, author || null]
+      'INSERT INTO announcements (title, content, author, author_id, class_name, created_at) VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING *',
+      [title, content, author || null, userId || null, class_name || null]
     );
-    res.status(201).json({ announcement: result.rows[0] });
+    const announcement = result.rows[0];
+
+    // Créer les notifications pour tous les étudiants de la classe
+    if (class_name) {
+      // Récupérer tous les étudiants de cette classe
+      const studentsResult = await pool.query(
+        'SELECT id FROM users WHERE classe=$1 AND role=$2',
+        [class_name, 'eleve']
+      );
+      
+      // Créer une notification pour chaque étudiant
+      for (const student of studentsResult.rows) {
+        await pool.query(
+          'INSERT INTO announcement_notifications (announcement_id, to_user_id, is_read, created_at) VALUES ($1,$2,FALSE,NOW())',
+          [announcement.id, student.id]
+        );
+      }
+    } else {
+      // Si pas de classe spécifiée, notifier tous les étudiants
+      const allStudentsResult = await pool.query(
+        'SELECT id FROM users WHERE role=$1',
+        ['eleve']
+      );
+      
+      for (const student of allStudentsResult.rows) {
+        await pool.query(
+          'INSERT INTO announcement_notifications (announcement_id, to_user_id, is_read, created_at) VALUES ($1,$2,FALSE,NOW())',
+          [announcement.id, student.id]
+        );
+      }
+    }
+
+    res.status(201).json({ announcement: announcement });
   } catch (err) {
     console.error('CREATE ANN ERROR', err);
     res.status(500).json({ error: 'Erreur serveur', details: err.message });
   }
 };
 
+exports.deleteAnnouncement = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+  
+  if (!userId) return res.status(401).json({ error: 'Non authentifié' });
+  
+  try {
+    // Vérifier que l'annonce existe
+    const announcement = await pool.query(
+      'SELECT * FROM announcements WHERE id=$1',
+      [id]
+    );
+    
+    if (announcement.rows.length === 0) {
+      return res.status(404).json({ error: 'Annonce non trouvée' });
+    }
+    
+    // Vérifier que l'utilisateur est l'auteur de l'annonce
+    if (announcement.rows[0].author_id !== userId) {
+      return res.status(403).json({ error: 'Vous pouvez uniquement supprimer vos propres annonces' });
+    }
+    
+    // Supprimer l'annonce (les notifications sont supprimées en cascade)
+    await pool.query('DELETE FROM announcements WHERE id=$1', [id]);
+    
+    res.json({ message: 'Annonce supprimée' });
+  } catch (err) {
+    console.error('DELETE ANN ERROR', err);
+    res.status(500).json({ error: 'Erreur serveur', details: err.message });
+  }
+};
+
 exports.listAnnouncements = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200');
+    // Si l'utilisateur est authentifié, filtrer par sa classe
+    let query = 'SELECT * FROM announcements';
+    let params = [];
+    if (req.user && req.user.id) {
+      // Récupérer la classe de l'utilisateur
+      const userResult = await pool.query('SELECT classe FROM users WHERE id=$1', [req.user.id]);
+      const userClass = userResult.rows[0]?.classe;
+      if (userClass) {
+        query += ' WHERE class_name=$1 OR class_name IS NULL';
+        params = [userClass];
+      }
+    }
+    query += ' ORDER BY created_at DESC LIMIT 200';
+    const result = await pool.query(query, params);
     res.json({ announcements: result.rows });
   } catch (err) {
     console.error('LIST ANN ERROR', err);

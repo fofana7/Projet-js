@@ -52,8 +52,18 @@ async function initializeDatabase() {
 
         // Ajouter la colonne avatarurl si elle n'existe pas
         await pool.query(`
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatarurl VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatarurl TEXT;
         `);
+        
+        // Modifier le type de la colonne si elle est trop petite
+        try {
+            await pool.query(`
+                ALTER TABLE users ALTER COLUMN avatarurl SET DATA TYPE TEXT;
+            `);
+        } catch (e) {
+            // La colonne est déjà TEXT, pas d'erreur
+        }
+        
         console.log('✓ Migration BD effectuée (colonne avatarurl)');
 
         // Ajouter la colonne role si elle n'existe pas
@@ -183,6 +193,109 @@ async function initializeDatabase() {
         `);
         console.log('✓ Table post_comments créée/vérifiée');
 
+        // Créer la table pour les notifications de commentaires
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS comment_notifications (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                from_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                to_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                comment_id INT NOT NULL REFERENCES post_comments(id) ON DELETE CASCADE,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_comment_notif_to_user ON comment_notifications(to_user_id);
+            CREATE INDEX IF NOT EXISTS idx_comment_notif_created ON comment_notifications(created_at DESC);
+        `);
+        console.log('✓ Table comment_notifications créée/vérifiée');
+
+        // Créer la table pour les notifications de likes
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS like_notifications (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+                from_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                to_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_like_notif_to_user ON like_notifications(to_user_id);
+            CREATE INDEX IF NOT EXISTS idx_like_notif_created ON like_notifications(created_at DESC);
+        `);
+        console.log('✓ Table like_notifications créée/vérifiée');
+
+        // Créer la table pour les annonces de cours
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS announcements (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                author VARCHAR(255),
+                author_id INT REFERENCES users(id) ON DELETE SET NULL,
+                class_name VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Ajouter la colonnes si elles n'existent pas
+        await pool.query(`
+            ALTER TABLE announcements ADD COLUMN IF NOT EXISTS author_id INT REFERENCES users(id) ON DELETE SET NULL
+        `);
+        await pool.query(`
+            ALTER TABLE announcements ADD COLUMN IF NOT EXISTS class_name VARCHAR(100)
+        `);
+        
+        // Créer les indexes
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_announcements_class ON announcements(class_name)
+        `);
+        console.log('✓ Table announcements créée/vérifiée');
+
+        // Créer la table pour les notifications d'annonces
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS announcement_notifications (
+                id SERIAL PRIMARY KEY,
+                announcement_id INT NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+                to_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_announcement_notif_to_user ON announcement_notifications(to_user_id);
+            CREATE INDEX IF NOT EXISTS idx_announcement_notif_created ON announcement_notifications(created_at DESC);
+        `);
+        console.log('✓ Table announcement_notifications créée/vérifiée');
+
+        // Créer la table pour les documents
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS docs (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                url TEXT NOT NULL,
+                description TEXT,
+                uploader INT REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_docs_created ON docs(created_at DESC);
+        `);
+        console.log('✓ Table docs créée/vérifiée');
+
+        // Créer la table pour les messages de groupe
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS group_messages (
+                id SERIAL PRIMARY KEY,
+                group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+                sender_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                file_url VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_group_messages_group ON group_messages(group_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_group_messages_sender ON group_messages(sender_id);
+        `);
+        console.log('✓ Table group_messages créée/vérifiée');
+        console.log('✓ Table docs créée/vérifiée');
+
     } catch (error) {
         console.error('⚠️ Erreur lors de la migration:', error.message);
         console.error('Code erreur:', error.code);
@@ -195,25 +308,34 @@ async function testDatabaseConnection() {
     try {
         const result = await pool.query('SELECT NOW()');
         console.log('✓ Connexion à PostgreSQL réussie');
+        return true;
     } catch (error) {
         console.error('❌ Impossible de se connecter à PostgreSQL:', error.message);
         console.error('Vérifiez votre configuration dans config/db.js');
+        console.error('Détails:', error);
+        throw error; // Lancer l'erreur pour que startServer() la capture
     }
 }
-
 // Routes API (AVANT de lancer le serveur)
 const notificationRoutes = require('./routes/notifications');
 const postInteractionRoutes = require('./routes/postInteractions');
+const searchRoutes = require('./routes/search');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/posts/interactions', postInteractionRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/ami', friendsRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/constellation', constellationRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Redirection de la racine vers login
+app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
 
 // Servir le frontend (HTML/CSS/JS)
 // Priorité 1: frontend organisé (nouveau)
@@ -229,16 +351,33 @@ app.use((err, req, res, next) => {
 
 // Exécuter les migrations et tests au démarrage
 async function startServer() {
-    await testDatabaseConnection();
-    await initializeDatabase();
-    
-    // Lancer le serveur APRÈS les migrations
-    app.listen(port, () => {
-        console.log(`Serveur backend démarré sur http://localhost:${port}`);
-    });
+    try {
+        await testDatabaseConnection();
+        await initializeDatabase();
+        
+        // Lancer le serveur APRÈS les migrations
+        const server = app.listen(port, () => {
+            console.log(`✅ Serveur backend démarré sur http://localhost:${port}`);
+        });
+
+        // Graceful shutdown
+        process.on('SIGINT', () => {
+            console.log('\n👋 Fermeture du serveur...');
+            server.close(() => {
+                console.log('✓ Serveur fermé');
+                process.exit(0);
+            });
+        });
+
+    } catch (err) {
+        console.error('❌ Erreur au démarrage du serveur:', err.message);
+        console.error('Details:', err);
+        console.log('⚠️  Le serveur ne peut pas démarrer. Vérifiez:');
+        console.log('   1. PostgreSQL est en train de tourner');
+        console.log('   2. La base de données "MiniRéseau" existe');
+        console.log('   3. Les identifiants dans config/db.js sont corrects');
+        process.exit(1);
+    }
 }
 
-startServer().catch(err => {
-    console.error('Erreur démarrage:', err);
-    process.exit(1);
-});
+startServer();

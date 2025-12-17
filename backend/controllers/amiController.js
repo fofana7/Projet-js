@@ -20,7 +20,7 @@ module.exports = {
     getMyFriends: async (req, res) => {
         try {
             const result = await pool.query(
-                `SELECT DISTINCT u.id, u.username, u.email, u.first_name, u.last_name, u.bio
+                `SELECT DISTINCT u.id, u.username, u.email, u.first_name, u.last_name, u.bio, u.avatarurl
                  FROM users u
                  JOIN friendships f ON (
                     (f.user_id_1 = $1 AND f.user_id_2 = u.id) OR
@@ -278,6 +278,66 @@ module.exports = {
             res.json({ success: true, groupId, message: 'Groupe créé' });
         } catch (error) {
             console.error('❌ Erreur groupe:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    },
+
+    // Quitter un groupe
+    leaveGroup: async (req, res) => {
+        try {
+            const { groupId } = req.body;
+            const userId = req.user.id;
+
+            if (!groupId) {
+                return res.status(400).json({ error: 'groupId requis' });
+            }
+
+            // Vérifier que l'utilisateur est membre du groupe
+            const memberCheck = await pool.query(
+                `SELECT id FROM group_members WHERE group_id = $1 AND user_id = $2`,
+                [groupId, userId]
+            );
+
+            if (memberCheck.rows.length === 0) {
+                return res.status(404).json({ error: 'Vous n\'êtes pas membre de ce groupe' });
+            }
+
+            // Supprimer l'utilisateur du groupe
+            const result = await pool.query(
+                `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2 RETURNING *`,
+                [groupId, userId]
+            );
+
+            console.log(`✓ Utilisateur ${userId} a quitté le groupe ${groupId}`);
+            res.json({ success: true, message: 'Vous avez quitté le groupe' });
+        } catch (error) {
+            console.error('❌ Erreur quitter groupe:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    },
+
+    // Vérifier si deux utilisateurs sont amis
+    checkFriendship: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const friendId = parseInt(req.params.friendId);
+
+            if (!friendId || isNaN(friendId)) {
+                return res.status(400).json({ error: 'friendId invalide' });
+            }
+
+            // Vérifier la relation
+            const result = await pool.query(
+                `SELECT status FROM friendships 
+                 WHERE (user_id_1 = $1 AND user_id_2 = $2) OR (user_id_1 = $2 AND user_id_2 = $1)`,
+                [userId, friendId]
+            );
+
+            const isFriend = result.rows.length > 0 && result.rows[0].status === 'accepted';
+            
+            res.json({ isFriend });
+        } catch (error) {
+            console.error('❌ Erreur vérification amitié:', error);
             res.status(500).json({ error: 'Erreur serveur' });
         }
     }

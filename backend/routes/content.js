@@ -11,9 +11,10 @@ router.get('/docs', content.listDocs);
 router.post('/events', protect, content.createEvent);
 router.get('/events', content.listEvents);
 
-// Announcements - réservé au personnel académique
-router.post('/announcements', protect, requireRole('personnel'), content.createAnnouncement);
-router.get('/announcements', content.listAnnouncements);
+// Announcements - réservé aux enseignants et admins pour POST/DELETE
+router.post('/announcements', protect, requireRole(['enseignant', 'admin']), content.createAnnouncement);
+router.delete('/announcements/:id', protect, content.deleteAnnouncement);
+router.get('/announcements', protect, content.listAnnouncements);
 
 // Polls
 router.post('/polls', protect, content.createPoll);
