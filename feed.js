@@ -71,7 +71,7 @@ function formatAPIPost(apiPost) {
         authorName: apiPost.username || 'Utilisateur',
         authorHandle: `@${apiPost.username || 'user'}`,
         authorInitials: (apiPost.username || 'U').substring(0, 2).toUpperCase(),
-        avatarurl: apiPost.avatarurl || 'https://i.pravatar.cc/150'
+        avatarurl: apiPost.avatarurl || null
     };
 }
 

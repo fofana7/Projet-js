@@ -207,6 +207,13 @@ html, body {
 </head>
 
 <body>
+<script>
+  const THEME_STORAGE_KEY = 'selectedTheme';
+  const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+  if (saved === 'light') {
+    document.body.classList.add('theme-light');
+  }
+</script>
 
 <!-- Background cosmic layers -->
 <div class="bg-layer" id="nebula1"></div>

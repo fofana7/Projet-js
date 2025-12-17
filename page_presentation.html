@@ -41,6 +41,13 @@
   </style>
 </head>
 <body>
+  <script>
+    const THEME_STORAGE_KEY = 'selectedTheme';
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+    if (saved === 'light') {
+      document.body.classList.add('theme-light');
+    }
+  </script>
   <header>
     <div class="logo">Monosocial</div>
     <div class="nav">

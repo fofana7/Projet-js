@@ -399,3 +399,81 @@ nav.menu button {
     justify-content: center;
   }
 }
+
+/* === MODE CLAIR === */
+body.theme-light {
+  --bg: #ffffff;
+  --card: #f8f9fa;
+  --muted: #6b7280;
+  --accent: #4f46e5;
+  --glass: rgba(0, 0, 0, 0.03);
+  --success: #10b981;
+  --danger: #ef4444;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  
+  color-scheme: light;
+  background: linear-gradient(180deg, #ffffff, #f3f4f6);
+  color: #1f2937;
+}
+
+body.theme-light * {
+  color: #1f2937;
+}
+
+body.theme-light header {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.03), transparent);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+body.theme-light .card {
+  background: linear-gradient(180deg, #f8f9fa, #ffffff);
+  border: 1px solid #e5e7eb;
+}
+
+body.theme-light .btn {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #1f2937;
+}
+
+body.theme-light .btn:hover {
+  background: #e5e7eb;
+}
+
+body.theme-light input,
+body.theme-light textarea {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
+}
+
+body.theme-light .post-card,
+body.theme-light .message-item,
+body.theme-light .friend-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+body.theme-light a {
+  color: #4f46e5;
+}
+
+body.theme-light .stat-value {
+  color: #4f46e5;
+}
+
+body.theme-light .profile-pseudo {
+  color: #1f2937;
+}
+
+body.theme-light .profile-bio {
+  color: #6b7280;
+}
+
+body.theme-light .empty-state {
+  color: #9ca3af;
+}
+

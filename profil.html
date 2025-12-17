@@ -304,6 +304,182 @@
             font-size: 0.9rem;
         }
 
+        /* --- Posts List --- */
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .post-card {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: rgba(255, 255, 255, 0.02);
+            transition: var(--transition);
+        }
+
+        .post-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary-color);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .post-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .post-author {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .post-author-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .post-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .post-content {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .post-image {
+            width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-bottom: 12px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .post-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 6px;
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .post-action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+            color: var(--text-primary);
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comments-section {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+        }
+
+        .comments-list {
+            margin-bottom: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            padding: 8px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comment-item strong {
+            color: var(--text-primary);
+        }
+
+        .comment-item small {
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .comment-item p {
+            margin: 4px 0 0 0;
+            color: var(--text-secondary);
+        }
+
+        .comment-input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .comment-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .comment-submit-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .comment-submit-btn:hover {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
         /* --- Formulaire de modification --- */
         .edit-form-content h3 {
             color: var(--text-primary);
@@ -478,9 +654,95 @@
                 flex-direction: column;
             }
         }
+
+        /* === MODE CLAIR POUR LE PROFIL === */
+        body.theme-light {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f59e0b;
+            --background-color: #ffffff;
+            --card-background: #f9fafb;
+            --card-hover: #f3f4f6;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            color: #1f2937;
+        }
+
+        body.theme-light .container {
+            background: transparent;
+        }
+
+        body.theme-light .profile-header-area {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body.theme-light .card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+
+        body.theme-light .profile-info-text h2,
+        body.theme-light .profile-pseudo {
+            color: #1f2937;
+        }
+
+        body.theme-light .profile-bio,
+        body.theme-light .profile-handle {
+            color: #6b7280;
+        }
+
+        body.theme-light .stat-value {
+            color: #667eea;
+        }
+
+        body.theme-light .btn {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+
+        body.theme-light .btn:hover {
+            background: #e5e7eb;
+        }
+
+        body.theme-light input,
+        body.theme-light textarea {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+
+        body.theme-light input::placeholder,
+        body.theme-light textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        body.theme-light .post-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        body.theme-light .empty-state {
+            color: #9ca3af;
+        }
     </style>
 </head>
 <body>
+    <script>
+        // Charger le thème au démarrage avant toute rendu
+        const THEME_STORAGE_KEY = 'selectedTheme';
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+        
+        if (saved === 'light') {
+            document.body.classList.add('theme-light');
+        }
+    </script>
 
 <div id="profileApp" class="container">
     
@@ -511,13 +773,25 @@
             </div>
         </div>
 
-        <div class="action-buttons">
+        <div class="action-buttons" id="actionButtons">
             <button class="btn btn-primary" onclick="editProfileScroll()">
                 ✏️ Modifier le profil
             </button>
             <button class="btn btn-secondary" onclick="shareProfile()">
                 🔗 Partager
             </button>
+        </div>
+
+        <div class="action-buttons" id="friendshipButtons" style="display: none;">
+            <button class="btn btn-primary" id="addFriendBtn" onclick="addFriend()" style="display: none;">
+                👤 Être ami
+            </button>
+            <div id="friendStatusDiv" style="display: none; align-items: center; gap: 10px;">
+                <span style="font-size: 16px; font-weight: 600; color: var(--success-color);">👥 Ami(e)</span>
+                <button class="btn btn-secondary" id="removeFriendBtn" onclick="removeFriend()" style="padding: 8px 16px;">
+                    👋 Supprimer
+                </button>
+            </div>
         </div>
     </section>
 
@@ -528,7 +802,14 @@
         </div>
     </section>
 
-    <section class="edit-form-section card">
+    <section class="posts-section card">
+        <h3>📝 Publications</h3>
+        <div class="posts-list" id="profilePostsList">
+            <div class="empty-state">Aucune publication pour le moment</div>
+        </div>
+    </section>
+
+    <section class="edit-form-section card" id="editFormSection" style="display: none;">
         <h3>✏️ Modifier votre profil</h3>
         <form id="profileEditForm" class="edit-form-content">
             <div class="form-group">
@@ -700,6 +981,7 @@
             postsCount: document.getElementById("postsCount"),
             friendsList: document.getElementById("friendsList"),
             
+            editFormSection: document.getElementById("editFormSection"),
             editForm: document.getElementById("profileEditForm"),
             editPseudo: document.getElementById("editPseudo"),
             editBio: document.getElementById("editBio"),
@@ -716,20 +998,87 @@
 
         // Attache les écouteurs d'événements
         bindEvents() {
-            this.elements.editForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleProfileUpdate();
-            });
+            if (this.elements.editForm) {
+                this.elements.editForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleProfileUpdate();
+                });
+            }
         },
 
         // Affiche les données de l'utilisateur sur la page
         async loadProfile() {
-            const user = await UserData.getCurrentUser();
+            // Vérifier s'il y a un ID de profil dans l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const profileId = urlParams.get('id');
+            
+            // Récupérer l'ID de l'utilisateur connecté
+            const currentUserData = await UserData.getCurrentUser();
+            const currentUserId = currentUserData?.id;
+            
+            let user;
+            if (profileId) {
+                // Charger le profil d'un autre utilisateur
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${API_BASE}/api/users/${profileId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Profil non trouvé');
+                    }
+                    user = await response.json();
+                } catch (error) {
+                    console.error('Erreur chargement profil:', error);
+                    alert('Profil non trouvé');
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } else {
+                // Charger le profil de l'utilisateur connecté
+                user = currentUserData;
+            }
+            // Sauvegarder les données du profil visité
             currentUser = user;
+            // Mais aussi sauvegarder l'utilisateur connecté pour les actions
+            const loggedInUserId = currentUserId;
 
-            // Vérifier s'il y a un avatar en localStorage (image modifiée localement)
-            const avatarData = localStorage.getItem('userAvatarLocal');
-            const avatarToDisplay = avatarData || user.avatarurl || "https://i.pravatar.cc/150";
+            // Vérifier si c'est MON profil
+            const isOwnProfile = !profileId || (profileId && String(profileId) === String(currentUserId));
+            
+            // Afficher/cacher les boutons d'action selon si c'est notre profil
+            const actionButtons = document.getElementById('actionButtons');
+            const friendshipButtons = document.getElementById('friendshipButtons');
+            if (actionButtons) {
+                actionButtons.style.display = isOwnProfile ? 'flex' : 'none';
+            }
+            
+            // Afficher les boutons d'amitié si c'est un autre profil
+            if (friendshipButtons && !isOwnProfile) {
+                friendshipButtons.style.display = 'flex';
+                // Vérifier si on est amis - passer l'ID de l'utilisateur connecté, pas du profil!
+                await this.updateFriendshipButtons(profileId, loggedInUserId);
+            }
+            
+            // Désactiver les champs de formulaire si ce n'est pas notre profil
+            if (this.elements.editFormSection) {
+                this.elements.editFormSection.style.display = isOwnProfile ? 'block' : 'none';
+            }
+            
+            // Désactiver les champs de formulaire si ce n'est pas notre profil
+            if (this.elements.editPseudo && this.elements.editBio && this.elements.editAvatar) {
+                this.elements.editPseudo.disabled = !isOwnProfile;
+                this.elements.editBio.disabled = !isOwnProfile;
+                this.elements.editAvatar.disabled = !isOwnProfile;
+                if (this.elements.saveButton) {
+                    this.elements.saveButton.disabled = !isOwnProfile;
+                }
+            }
+
+            // Afficher l'avatar de la base de données ou un placeholder par défaut
+            const username = user.username || "Utilisateur";
+            const firstLetter = username.charAt(0).toUpperCase();
+            const avatarToDisplay = user.avatarurl || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%230b84ff'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='white' font-size='50' font-weight='bold'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
 
             // Mise à jour des informations de base
             this.elements.pseudo.textContent = user.username || "Utilisateur";
@@ -741,25 +1090,34 @@
             this.elements.friendsCount.textContent = user.friends?.length || 0;
             this.elements.followersCount.textContent = user.followers || 0;
             this.elements.postsCount.textContent = user.posts || 0;
-
+            
             // Remplissage du formulaire d'édition
-            this.elements.editPseudo.value = user.username || "";
-            this.elements.editBio.value = user.bio || "";
+            if (this.elements.editPseudo) {
+                this.elements.editPseudo.value = user.username || "";
+            }
+            if (this.elements.editBio) {
+                this.elements.editBio.value = user.bio || "";
+            }
             
             // Rendu de la liste d'amis (sera écrasé par l'API si disponible)
             this.renderFriends(user.friends || []);
 
-            // Charger les amis réels depuis l'API /api/ami/friends
-            await this.loadFriendsFromAPI();
+            // Charger les amis réels depuis l'API
+            // Si c'est un autre profil, passer son ID; sinon ne rien passer (utilise les amis de l'utilisateur connecté)
+            await this.loadFriendsFromAPI(profileId || currentUserId);
+
+            // Charger les posts du profil
+            await this.loadProfilePosts(user.id);
         },
 
-        // Charge les amis depuis l'API d'amis pour synchroniser avec la base
-        async loadFriendsFromAPI() {
+        // Charge les amis d'un utilisateur spécifique
+        async loadFriendsFromAPI(userId) {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
 
-                const res = await fetch(`${API_BASE}/api/ami/friends`, {
+                // Utiliser le nouvel endpoint pour récupérer les amis d'un utilisateur spécifique
+                const res = await fetch(`${API_BASE}/api/users/${userId}/friends`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -777,7 +1135,7 @@
                     username: (f.first_name && f.last_name)
                         ? `${f.first_name} ${f.last_name}`
                         : (f.first_name || f.username || 'Étudiant'),
-                    avatar: `https://i.pravatar.cc/80?u=${encodeURIComponent(f.email || f.username || '')}`
+                    avatar: f.avatarurl || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%23999' font-size='40' font-weight='bold'%3E%3F%3C/text%3E%3C/svg%3E`
                 }));
 
                 // Mettre à jour les stats et l'affichage
@@ -786,6 +1144,108 @@
             } catch (e) {
                 console.log('Impossible de charger les amis depuis l\'API, on garde les données locales.');
             }
+        },
+
+        // Charge les posts d'un utilisateur spécifique
+        async loadProfilePosts(userId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const res = await fetch(`${API_BASE}/api/posts/user/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!res.ok) return;
+
+                const posts = await res.json();
+                if (!Array.isArray(posts)) return;
+
+                // Afficher les posts
+                this.renderPosts(posts);
+            } catch (e) {
+                console.log('Impossible de charger les posts depuis l\'API');
+            }
+        },
+
+        // Affiche la liste des posts
+        renderPosts(posts) {
+            const container = document.getElementById('profilePostsList');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="empty-state">Aucune publication pour le moment</div>';
+                return;
+            }
+
+            posts.forEach(post => {
+                container.appendChild(this.createPostCard(post));
+            });
+        },
+
+        // Génère le HTML pour une carte de post
+        createPostCard(post) {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+
+            const authorName = post.first_name && post.last_name 
+                ? `${post.first_name} ${post.last_name}`
+                : post.username;
+
+            const date = new Date(post.created_at).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            // Utiliser la vraie photo de profil si disponible
+            const avatarUrl = (post.avatarurl && post.avatarurl !== 'https://i.pravatar.cc/150') 
+                ? post.avatarurl 
+                : `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%230b84ff%22/%3E%3Ctext x=%2250%22 y=%2265%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-weight=%22bold%22%3E${authorName.charAt(0).toUpperCase()}%3C/text%3E%3C/svg%3E`;
+
+            console.log('Post:', post.id, 'Avatar:', post.avatarurl, 'Using:', avatarUrl);
+
+            let postHTML = `
+                <div class="post-header">
+                    <img src="${avatarUrl}" alt="${authorName}" class="post-avatar" style="object-fit: cover; border-radius: 50%; width: 40px; height: 40px;">
+                    <div class="post-author">
+                        <div class="post-author-name">${authorName}</div>
+                        <div class="post-date">${date}</div>
+                    </div>
+                </div>
+                <div class="post-content">${post.content}</div>
+            `;
+
+            if (post.image_url || post.image_data) {
+                postHTML += `<img src="${post.image_url || post.image_data}" alt="Post image" class="post-image">`;
+            }
+
+            postHTML += `
+                <div class="post-stats">
+                    <span>❤️ ${post.likes_count || 0} like${post.likes_count !== 1 ? 's' : ''}</span>
+                    <span>💬 ${post.comments_count || 0} commentaire${post.comments_count !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="post-actions">
+                    <button class="post-action-btn" onclick="toggleLikeProfile(${post.id})">❤️ Aimer</button>
+                    <button class="post-action-btn" onclick="toggleCommentProfile(${post.id})">💬 Commenter</button>
+                </div>
+                <div id="comments-section-${post.id}" class="comments-section" style="display:none;">
+                    <div id="comments-list-${post.id}" class="comments-list"></div>
+                    <div class="comment-input-area">
+                        <input type="text" id="comment-input-${post.id}" placeholder="Ajouter un commentaire..." class="comment-input">
+                        <button onclick="submitCommentProfile(${post.id})" class="comment-submit-btn">Envoyer</button>
+                    </div>
+                </div>
+            `;
+
+            div.innerHTML = postHTML;
+            return div;
         },
 
         // Génère le HTML pour une carte d'ami
@@ -829,32 +1289,82 @@
                     return;
                 }
 
-                // ===== GESTION DE L'AVATAR EN LOCAL =====
-                // Sauvegarder l'avatar en localStorage si un nouveau fichier est sélectionné
+                // ===== CONVERTIR L'AVATAR EN BASE64 SI NOUVEAU FICHIER =====
+                let avatarToSend = '';
                 if (avatarFile) {
+                    // Vérifier la taille (max 5MB)
+                    if (avatarFile.size > 5 * 1024 * 1024) {
+                        this.showError("L'image est trop grande (max 5MB)");
+                        this.elements.saveButton.disabled = false;
+                        return;
+                    }
+
+                    // Compresser l'image via canvas
                     const reader = new FileReader();
-                    const avatarBase64 = await new Promise((resolve, reject) => {
+                    const imageBase64 = await new Promise((resolve, reject) => {
                         reader.onload = (e) => resolve(e.target.result);
                         reader.onerror = reject;
                         reader.readAsDataURL(avatarFile);
                     });
-                    
-                    // Sauvegarder immédiatement en localStorage
-                    localStorage.setItem('userAvatarLocal', avatarBase64);
-                    console.log('✓ Avatar sauvegardé en localStorage');
+
+                    // Créer une image et la redimensionner
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxWidth = 300;
+                        const maxHeight = 300;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Convertir en base64 compressé
+                        avatarToSend = canvas.toDataURL('image/jpeg', 0.8);
+                        console.log('✓ Avatar compressé et converti en base64');
+                    };
+                    img.src = imageBase64;
+
+                    // Attendre que l'image soit chargée (hack simple)
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
 
-                // ===== SAUVEGARDER NOM ET BIO EN BD =====
-                // Sauvegarder via l'API
-                const updatedUser = await UserData.saveUser({
-                    id: currentUser?.id,
-                    username: newPseudo,
-                    bio: newBio,
-                    email: currentUser?.email,
-                    friends: currentUser?.friends,
-                    followers: currentUser?.followers,
-                    posts: currentUser?.posts
+                // ===== SAUVEGARDER DANS LA BASE DE DONNÉES =====
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/api/users/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username: newPseudo,
+                        bio: newBio,
+                        avatarurl: avatarToSend || ''
+                    })
                 });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Erreur lors de la mise à jour');
+                }
+
+                const result = await response.json();
+                console.log('✓ Profil mis à jour avec succès');
 
                 // Recharger le profil avec les nouvelles données
                 await this.loadProfile();
@@ -889,6 +1399,69 @@
                 msg.style.display = "none"; 
                 msg.style.color = "var(--success-color)";
             }, 3000);
+        },
+
+        // Met à jour les boutons d'amitié selon le statut
+        async updateFriendshipButtons(profileId, currentUserId) {
+            const addBtn = document.getElementById('addFriendBtn');
+            const friendStatusDiv = document.getElementById('friendStatusDiv');
+            const removeBtn = document.getElementById('removeFriendBtn');
+            
+            console.log('🔍 Vérification amitié pour', profileId, 'par', currentUserId);
+            
+            if (!addBtn || !friendStatusDiv) {
+                console.log('❌ Éléments non trouvés');
+                return;
+            }
+            if (!profileId || !currentUserId) {
+                console.log('❌ IDs manquants', profileId, currentUserId);
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.log('❌ Token manquant');
+                    return;
+                }
+                
+                const checkUrl = `${API_BASE}/api/ami/check/${profileId}`;
+                console.log('📡 Appel API:', checkUrl);
+                
+                // Vérifier si on est amis
+                const res = await fetch(checkUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                console.log('📨 Réponse API:', res.status);
+                
+                if (!res.ok) {
+                    console.log('❌ Erreur API, affichage du bouton "Être ami"');
+                    addBtn.style.display = 'block';
+                    friendStatusDiv.style.display = 'none';
+                    return;
+                }
+                
+                const data = await res.json();
+                console.log('✓ Données reçues:', data);
+                
+                const isFriend = data.isFriend || false;
+                
+                // Afficher l'élément approprié
+                if (isFriend) {
+                    console.log('👥 Vous êtes amis - affichage "Ami(e)"');
+                    addBtn.style.display = 'none';
+                    friendStatusDiv.style.display = 'flex';
+                } else {
+                    console.log('👤 Pas amis - affichage "Être ami"');
+                    addBtn.style.display = 'block';
+                    friendStatusDiv.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('❌ Erreur vérification amitié:', e);
+                addBtn.style.display = 'block';
+                friendStatusDiv.style.display = 'none';
+            }
         }
     };
 
@@ -926,6 +1499,196 @@
         document.getElementById('editBio').value = user.bio || "";
         document.getElementById('editAvatar').value = '';
         document.getElementById('successMsg').style.display = 'none';
+    }
+
+    // Fonctions d'amitié
+    async function addFriend() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileId = urlParams.get('id');
+        const token = localStorage.getItem('token');
+        
+        if (!token || !profileId) return;
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/ami/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ toId: parseInt(profileId) })
+            });
+            
+            if (!res.ok) {
+                const error = await res.json();
+                alert('❌ ' + (error.message || 'Erreur lors de l\'ajout'));
+                return;
+            }
+            
+            const result = await res.json();
+            alert('✓ ' + (result.message || 'Ami ajouté!'));
+            
+            // Récupérer l'ID de l'utilisateur connecté pour le passage correct
+            const currentUserData = await UserData.getCurrentUser();
+            ProfileManager.updateFriendshipButtons(profileId, currentUserData.id);
+        } catch (e) {
+            console.error('Erreur:', e);
+            alert('❌ Erreur réseau');
+        }
+    }
+
+    async function removeFriend() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileId = urlParams.get('id');
+        const token = localStorage.getItem('token');
+        
+        if (!token || !profileId) return;
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cet ami?')) return;
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/ami/remove`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ friendId: parseInt(profileId) })
+            });
+            
+            if (!res.ok) {
+                const error = await res.json();
+                alert('❌ ' + (error.message || 'Erreur lors de la suppression'));
+                return;
+            }
+            
+            const result = await res.json();
+            alert('✓ ' + (result.message || 'Ami supprimé'));
+            
+            // Récupérer l'ID de l'utilisateur connecté pour le passage correct
+            const currentUserData = await UserData.getCurrentUser();
+            ProfileManager.updateFriendshipButtons(profileId, currentUserData.id);
+        } catch (e) {
+            console.error('Erreur:', e);
+            alert('❌ Erreur réseau');
+        }
+    }
+
+    // Likes/Comments - Fonctions réutilisables
+    async function toggleLike(postId, callback) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Veuillez vous connecter d\'abord');
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok || response.status === 400) {
+                // Toggle successful - reload
+                if (callback) callback();
+            }
+        } catch (error) {
+            console.error('Erreur like:', error);
+        }
+    }
+
+    async function toggleCommentSection(postId) {
+        const commentSection = document.getElementById(`comments-section-${postId}`);
+        if (commentSection) {
+            commentSection.style.display = commentSection.style.display === 'none' ? 'block' : 'none';
+            if (commentSection.style.display === 'block') {
+                await loadComments(postId);
+            }
+        }
+    }
+
+    async function loadComments(postId) {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/posts/${postId}/comments`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const comments = await response.json();
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            if (commentsList) {
+                commentsList.innerHTML = '';
+                comments.forEach(comment => {
+                    const date = new Date(comment.created_at).toLocaleDateString('fr-FR');
+                    commentsList.innerHTML += `
+                        <div class="comment-item">
+                            <strong>${comment.username}</strong> <small>${date}</small>
+                            <p>${comment.content}</p>
+                        </div>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error('Erreur chargement commentaires:', error);
+        }
+    }
+
+    async function submitComment(postId, callback) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Veuillez vous connecter d\'abord');
+            return;
+        }
+
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (!input) return;
+        
+        const content = input.value.trim();
+        if (!content) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/posts/${postId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            });
+
+            if (response.ok) {
+                input.value = '';
+                await loadComments(postId);
+                if (callback) callback();
+            }
+        } catch (error) {
+            console.error('Erreur ajout commentaire:', error);
+        }
+    }
+
+    // Wrapper pour profil
+    async function toggleLikeProfile(postId) {
+        await toggleLike(postId, async () => {
+            const profileId = new URLSearchParams(window.location.search).get('id') || JSON.parse(localStorage.getItem('user')).id;
+            await ProfileManager.loadProfilePosts(profileId);
+        });
+    }
+
+    async function toggleCommentProfile(postId) {
+        await toggleCommentSection(postId);
+    }
+
+    async function submitCommentProfile(postId) {
+        await submitComment(postId, async () => {
+            const profileId = new URLSearchParams(window.location.search).get('id') || JSON.parse(localStorage.getItem('user')).id;
+            await ProfileManager.loadProfilePosts(profileId);
+        });
     }
 
     // Démarrage de l'application

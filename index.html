@@ -18,9 +18,69 @@
             background: rgba(0, 0, 0, 0.8); z-index: 1000;
             display: none;
         }
+        
+        /* Améliorations pour les commentaires */
+        .comment-input {
+            background: #f0f0f0 !important;
+            color: #333 !important;
+            border: 1px solid #ddd !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            font-size: 13px !important;
+        }
+        
+        .comment-input::placeholder {
+            color: #999 !important;
+        }
+        
+        .comment-input:focus {
+            outline: none !important;
+            background: #fff !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        #comments-list, #comments-list-* {
+            background: #f9f9f9 !important;
+            border-radius: 8px !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
+        }
+        
+        .post-stats {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
+    <script>
+        // Charger le thème au démarrage avant toute rendu
+        const THEME_STORAGE_KEY = 'selectedTheme';
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+        
+        function applyTheme(theme) {
+            document.body.classList.remove('theme-dark', 'theme-light', 'theme-auto');
+            
+            if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const effective = prefersDark ? 'dark' : 'light';
+                if (effective === 'light') {
+                    document.body.classList.add('theme-light');
+                }
+            } else if (theme === 'light') {
+                document.body.classList.add('theme-light');
+            }
+        }
+        
+        applyTheme(saved);
+    </script>
     
     <!-- Zone pour afficher les messages (erreurs/succès) - Absolue ou Fixe -->
     <div id="message-container" class="fixed top-4 right-4 z-[1001] w-full max-w-sm"></div>
@@ -36,13 +96,44 @@
                     <div class="small">Un prototype social</div>
                 </div>
             </div>
-            <div class="search">
-                <input id="searchInput" placeholder="Rechercher personnes ou posts..." />
+            <div class="search" style="position:relative;flex:1;max-width:500px;">
+                <input id="searchInput" placeholder="🔍 Chercher des amis, posts..." style="width:100%;padding:10px 16px;border-radius:20px;border:2px solid #e0e0e0;font-size:14px;transition:all 0.3s;" />
+                <div id="searchResults" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:white;border-radius:12px;max-height:500px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.15);border:1px solid #e0e0e0;">
+                    
+                    <!-- UTILISATEURS -->
+                    <div id="searchUsersSection" style="display:none;">
+                        <div style="padding:12px 16px;background:#f8f9fa;border-bottom:1px solid #e9ecef;border-radius:12px 12px 0 0;">
+                            <div style="font-weight:600;font-size:12px;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">👥 UTILISATEURS</div>
+                        </div>
+                        <div id="searchUsersList" style="max-height:250px;overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- POSTS -->
+                    <div id="searchPostsSection" style="display:none;border-top:1px solid #e9ecef;">
+                        <div style="padding:12px 16px;background:#f8f9fa;">
+                            <div style="font-weight:600;font-size:12px;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">📝 POSTS</div>
+                        </div>
+                        <div id="searchPostsList" style="max-height:250px;overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- AMIS -->
+                    <div id="searchFriendsSection" style="display:none;border-top:1px solid #e9ecef;">
+                        <div style="padding:12px 16px;background:#f8f9fa;">
+                            <div style="font-weight:600;font-size:12px;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">👫 MES AMIS</div>
+                        </div>
+                        <div id="searchFriendsList" style="max-height:250px;overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- VIDE -->
+                    <div id="searchEmpty" style="display:none;padding:24px;text-align:center;color:#adb5bd;">
+                        <div style="font-size:32px;margin-bottom:8px;">🔍</div>
+                        <div style="font-size:14px;">Aucun résultat trouvé</div>
+                    </div>
+                </div>
             </div>
             <div class="nav-actions">
                 <!-- Ces boutons sont masqués si déconnecté, sinon on garde la nav -->
-                <button class="btn" id="notifyBtn" onclick="toggleNotifications()">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
-                <button class="btn" id="newPostBtn">➕ Nouveau</button>
+                <button class="btn" id="notifyBtn" onclick="toggleNotifications(event)">🔔 <span id="notifCount" style="margin-left:6px">0</span></button>
                 <button class="btn" id="logoutBtn" onclick="logout()">🚪 Déconnexion</button>
             </div>
         </header>
@@ -61,8 +152,9 @@
                   <!-- Navigation cohérente : onglets internes avec showTab() -->
                   <button id="feed-btn" onclick="showTab('feed')">🏠 Fil d'actualité</button>
                   <button id="messages-btn" onclick="location.href='frontend/pages/message-v2.html'">💬 Messagerie</button>
-                                    <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
-                                    <button id="profile-btn" onclick="goToProfile()">👤 Profil</button>
+                  <button id="announcements-btn" onclick="location.href='frontend/pages/message-v2.html?tab=board'" style="display:none;">📢 Annonces</button>
+                  <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                  <button id="profile-btn" onclick="goToProfile()">👤 Profil</button>
                   <button id="constellation-btn" onclick="location.href='constellation.html'">🌌 Constellation</button>
                   <button id="settings-btn" onclick="location.href='page_parametre.html'">⚙️ Paramètres</button>
                 </nav>
@@ -159,14 +251,6 @@
             <div class="card">
                 <strong>Suggestions</strong>
                 <div class="suggest" id="suggestions"></div>
-            </div>
-
-            <div class="card small">
-                <strong>Raccourcis</strong>
-                <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-                    <button class="btn" onclick="seedSample()">Générer exemple</button>
-                    <button class="btn" onclick="clearAll()">Réinitialiser</button>
-                </div>
             </div>
         </aside>
     </div>
@@ -278,7 +362,7 @@
         // ====================================================================
         // GESTION DES MESSAGES D'ERREUR/SUCCÈS
         // ====================================================================
-window.goToProfile = function() {
+window.goToProfile = function(userId) {
             const token = localStorage.getItem('token');
             const user = localStorage.getItem('user');
 
@@ -288,8 +372,13 @@ window.goToProfile = function() {
                 return;
             }
 
-            // Redirection vers la page de profil (nom de fichier en français dans le projet)
-            window.location.href = "profil.html";
+            // Si userId est fourni, aller au profil de cet utilisateur
+            // Sinon, aller au profil de l'utilisateur connecté
+            if (userId) {
+                window.location.href = `profil.html?id=${userId}`;
+            } else {
+                window.location.href = "profil.html";
+            }
         };
         function showMessage(message, type = 'error') {
             const container = document.getElementById('message-container');
@@ -412,6 +501,12 @@ window.goToProfile = function() {
 
                     // Synchroniser les statistiques d'amis avec l'API
                     loadFriendsStats();
+                    
+                    // Afficher le bouton Annonces si c'est un enseignant ou admin
+                    const announcementBtn = document.getElementById('announcements-btn');
+                    if (announcementBtn && (currentUser.role === 'enseignant' || currentUser.role === 'admin')) {
+                        announcementBtn.style.display = 'block';
+                    }
                     
                     // Charger les notifications
                     loadNotifications();
@@ -704,15 +799,15 @@ window.goToProfile = function() {
                     ${imageHtml}
                     <div class="actions small">
                         <button class="btn" id="like-btn-${p.id}" onclick='toggleLikeAPI("${p.id}")'>❤ <span id="like-count-${p.id}">${p.likes||0}</span></button>
-                        <button class="btn" onclick='openCommentsAPI("${p.id}")'>💬 <span id="comment-count-${p.id}">${p.comments?.length||0}</span></button>
+                        <button class="btn" onclick='toggleCommentsAPI("${p.id}")'>💬 <span id="comment-count-${p.id}">${p.comments?.length||0}</span></button>
                         <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
-                        <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
+                        ${p.userId === currentUser?.id ? `<button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>` : ''}
                     </div>
-                    <div id="comments-${p.id}" style="margin-top:8px;display:none">
-                        <div id="comments-list-${p.id}" style="max-height:200px;overflow-y:auto;margin-bottom:8px;"></div>
-                        <div style="display:flex;gap:6px;">
-                            <input type="text" id="cinput-${p.id}" class="comment-input" placeholder="Ajouter un commentaire..." style="flex:1;padding:6px;border-radius:4px;border:1px solid #ccc;font-size:12px;">
-                            <button class="btn" onclick='addCommentAPI("${p.id}")' style="padding:6px 12px;font-size:12px;">Envoyer</button>
+                    <div id="comments-${p.id}" style="margin-top:8px;display:none;background:#f9f9f9;border-radius:8px;padding:12px;border:1px solid #e8e8e8;">
+                        <div id="comments-list-${p.id}" style="max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <input type="text" id="cinput-${p.id}" class="comment-input" placeholder="Ajouter un commentaire..." style="flex:1;">
+                            <button class="btn" onclick='submitCommentAPI("${p.id}")' style="padding:8px 14px;font-size:12px;white-space:nowrap;">✓ Envoyer</button>
                         </div>
                     </div>
                 `;
@@ -729,7 +824,7 @@ window.goToProfile = function() {
 
             try {
                 // Charger les likes
-                const likesRes = await fetch(`${API_BASE_URL}/posts/interactions/${postId}/likes`, {
+                const likesRes = await fetch(`${API_BASE_URL}/posts/${postId}/likes`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (likesRes.ok) {
@@ -738,13 +833,13 @@ window.goToProfile = function() {
                     if (likeCountEl) likeCountEl.textContent = likes.length;
                     
                     // Vérifier si l'utilisateur a aimé ce post
-                    const userLiked = likes.some(l => l.user_id === currentUser.id);
+                    const userLiked = likes.some(l => l.user_id === currentUser?.id);
                     const likeBtnEl = document.getElementById(`like-btn-${postId}`);
                     if (likeBtnEl) likeBtnEl.style.color = userLiked ? '#ff1744' : 'inherit';
                 }
 
-                // Charger les commentaires
-                const commentsRes = await fetch(`${API_BASE_URL}/posts/interactions/${postId}/comments`, {
+                // Charger les commentaires via le nouvel endpoint
+                const commentsRes = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (commentsRes.ok) {
@@ -755,17 +850,111 @@ window.goToProfile = function() {
                     const commentListEl = document.getElementById(`comments-list-${postId}`);
                     if (commentListEl) {
                         commentListEl.innerHTML = comments.map(c => `
-                            <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-bottom:6px;font-size:12px;">
-                                <strong>${escapeHtml(c.username)}</strong>
-                                <div>${escapeHtml(c.content)}</div>
-                                <div style="color:#999;font-size:10px;margin-top:4px;">${new Date(c.created_at).toLocaleString()}</div>
-                                ${c.user_id === currentUser.id ? `<button class="btn" onclick='deleteCommentAPI(${c.id})' style="padding:2px 6px;font-size:10px;margin-top:4px;">Supprimer</button>` : ''}
+                            <div style="background:white;padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #667eea;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                    <strong style="color:#333;">${escapeHtml(c.username)}</strong>
+                                    <div style="color:#999;font-size:11px;">${new Date(c.created_at).toLocaleString()}</div>
+                                </div>
+                                <div style="color:#555;margin-bottom:6px;line-height:1.4;">${escapeHtml(c.content)}</div>
+                                ${c.user_id === currentUser?.id ? `<button class="btn" onclick='deleteCommentAPI(${c.id})' style="padding:4px 8px;font-size:11px;background:#fee;color:#c00;border:1px solid #fcc;border-radius:3px;cursor:pointer;">🗑 Supprimer</button>` : ''}
                             </div>
                         `).join('');
                     }
                 }
             } catch (error) {
                 console.error('Erreur chargement interactions:', error);
+            }
+        }
+        
+        async function toggleLikeAPI(postId) {
+            const token = localStorage.getItem('token');
+            if (!token) return showAuthView('login');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok || response.status === 400) {
+                    // Successfully liked or already liked (toggle)
+                    if (response.status === 400) {
+                        // Already liked, unlike it
+                        await fetch(`${API_BASE_URL}/posts/${postId}/like`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    }
+                    // Reload the post
+                    await loadPostInteractions(postId);
+                }
+            } catch (error) {
+                console.error('Erreur like:', error);
+                showMessage('Erreur lors du like', 'error');
+            }
+        }
+
+        async function toggleCommentsAPI(postId) {
+            const commentSection = document.getElementById(`comments-${postId}`);
+            if (commentSection) {
+                commentSection.style.display = commentSection.style.display === 'none' ? 'block' : 'none';
+                if (commentSection.style.display === 'block') {
+                    await loadPostInteractions(postId);
+                }
+            }
+        }
+
+        async function submitCommentAPI(postId) {
+            const token = localStorage.getItem('token');
+            if (!token) return showAuthView('login');
+
+            const input = document.getElementById(`cinput-${postId}`);
+            if (!input) return;
+            
+            const content = input.value.trim();
+            if (!content) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    await loadPostInteractions(postId);
+                    showMessage('Commentaire ajouté', 'success');
+                }
+            } catch (error) {
+                console.error('Erreur ajout commentaire:', error);
+                showMessage('Erreur lors de l\'ajout du commentaire', 'error');
+            }
+        }
+
+        async function deleteCommentAPI(commentId) {
+            const token = localStorage.getItem('token');
+            if (!token) return showAuthView('login');
+
+            if (!confirm('Supprimer ce commentaire ?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/posts/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showMessage('Commentaire supprimé', 'success');
+                    // Reload feed to refresh counts
+                    await loadFeedFromAPI();
+                }
+            } catch (error) {
+                console.error('Erreur suppression commentaire:', error);
+                showMessage('Erreur lors de la suppression', 'error');
             }
         }
         
@@ -875,8 +1064,7 @@ window.goToProfile = function() {
             }
         }
         function toggleLike(id){ const p=localState.posts.find(x=>x.id===id); if(!p) return; p.likes=(p.likes||0)+1; save(); renderFeed(); }
-        function openComments(id){ const cEl=document.getElementById('comments-'+id); if(!cEl) return; cEl.style.display=cEl.style.display==='none'?'block':'none'; if(cEl.innerHTML===''){ const p=localState.posts.find(x=>x.id===id); cEl.innerHTML=renderCommentsSection(p); } }
-        function renderCommentsSection(post){ return `<div style="display:flex;gap:8px"><input id="cinput-${post.id}" style="flex:1;padding:8px;border-radius:8px;border:0;background:var(--glass)" placeholder="Écrire un commentaire..." /><button class="btn" onclick='addComment("${post.id}")'>Envoyer</button></div><div style="margin-top:8px">${(post.comments||[]).map(c=>`<div class="small" style="padding:6px 0;border-top:1px dashed rgba(255,255,255,0.02)"><strong>${escapeHtml(c.author)}</strong> <span class="muted">· ${new Date(c.ts).toLocaleString()}</span><div>${escapeHtml(c.text)}</div></div>`).join('')}</div>` }
+        function openComments(id){ const cEl=document.getElementById('comments-'+id); if(!cEl) return; cEl.style.display=cEl.style.display==='none'?'block':'none'; }
         function addComment(id){ if (!is_authenticated) return showAuthView('login'); const input=document.getElementById('cinput-'+id); if(!input) return; const text=input.value.trim(); if(!text) return; const post=localState.posts.find(p=>p.id===id); const authorName = `${currentUser.first_name} ${currentUser.last_name}`.trim() || currentUser.username; post.comments=post.comments||[]; post.comments.push({id:uid(),author:authorName,text,ts:Date.now()}); save(); renderFeed(); showMessage('Commentaire ajouté', 'success'); }
         function sharePost(id){ const url=new URL(location.href); url.hash='post-'+id; navigator.clipboard?.writeText(url.toString()).then(()=>showMessage('Lien copié', 'success')); }
         function notify(msg){ localState.notifications.push({id:uid(),text:msg,ts:Date.now()}); save(); }
@@ -997,7 +1185,150 @@ window.goToProfile = function() {
         function seedSample(){ const samples=[{text:'Bienvenue sur MiniRéseau ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},{text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},{text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}]; samples.forEach(s=>{ localState.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
         function clearAll(){ if(!confirm('Tout réinitialiser (stockage local des posts/amis) ?')) return; localStorage.removeItem(STORAGE_KEY); localState={posts:[],friends:[],notifications:[]}; save(); renderFeed(); }
 
-        document.getElementById('searchInput').addEventListener('input',(e)=>{ renderFeed(e.target.value.toLowerCase()); });
+        document.getElementById('searchInput').addEventListener('input', async (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const searchResults = document.getElementById('searchResults');
+            const searchEmpty = document.getElementById('searchEmpty');
+            
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                let hasResults = false;
+
+                // Afficher utilisateurs
+                const usersSection = document.getElementById('searchUsersSection');
+                const usersList = document.getElementById('searchUsersList');
+                if (data.users && data.users.length > 0) {
+                    hasResults = true;
+                    usersSection.style.display = 'block';
+                    usersList.innerHTML = data.users.map(user => {
+                        const displayName = user.first_name && user.last_name 
+                            ? `${user.first_name} ${user.last_name}` 
+                            : user.username;
+                        const initials = (user.first_name?.[0] || user.username?.[0] || '?').toUpperCase() + 
+                                       (user.last_name?.[0] || '').toUpperCase();
+                        const bgColor = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'][Math.floor(Math.random() * 5)];
+                        
+                        return `
+                            <div onclick="goToProfile(${user.id})" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.2s;hover:background-color:#f8f9fa;">
+                                <div style="width:40px;height:40px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;flex-shrink:0;">
+                                    ${initials}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:600;font-size:14px;color:#212529;margin-bottom:2px;">${escapeHtml(displayName)}</div>
+                                    <div style="font-size:12px;color:#6c757d;">@${escapeHtml(user.username)}</div>
+                                    ${user.classe ? `<div style="font-size:11px;color:#999;margin-top:2px;">📚 ${escapeHtml(user.classe)}</div>` : ''}
+                                </div>
+                                <div style="display:flex;align-items:center;">
+                                    ${user.friendship_status === 'accepted' ? '<span style="color:#28a745;font-weight:600;font-size:12px;">✓ Ami</span>' : user.friendship_status === 'pending' ? '<span style="color:#ff9800;font-weight:600;font-size:12px;">⏳ En attente</span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    usersSection.style.display = 'none';
+                }
+
+                // Afficher posts
+                const postsSection = document.getElementById('searchPostsSection');
+                const postsList = document.getElementById('searchPostsList');
+                if (data.posts && data.posts.length > 0) {
+                    hasResults = true;
+                    postsSection.style.display = 'block';
+                    postsList.innerHTML = data.posts.map(post => {
+                        const displayName = post.first_name && post.last_name 
+                            ? `${post.first_name} ${post.last_name}` 
+                            : post.username;
+                        const initials = (post.first_name?.[0] || post.username?.[0] || '?').toUpperCase() + 
+                                       (post.last_name?.[0] || '').toUpperCase();
+                        const bgColor = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'][Math.floor(Math.random() * 5)];
+                        
+                        return `
+                            <div onclick="document.getElementById('post-${post.id}')?.scrollIntoView({behavior:'smooth'})" style="padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.2s;">
+                                <div style="display:flex;gap:10px;margin-bottom:8px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;flex-shrink:0;">
+                                        ${initials}
+                                    </div>
+                                    <div style="font-size:12px;color:#212529;font-weight:600;">${escapeHtml(displayName)}</div>
+                                </div>
+                                <div style="color:#495057;font-size:13px;line-height:1.4;margin-left:42px;">
+                                    ${escapeHtml(post.content.substring(0, 80))}${post.content.length > 80 ? '...' : ''}
+                                </div>
+                                <div style="display:flex;gap:16px;margin-top:6px;margin-left:42px;font-size:11px;color:#6c757d;">
+                                    <span>❤ ${post.likes_count || 0}</span>
+                                    <span>💬 ${post.comments_count || 0}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    postsSection.style.display = 'none';
+                }
+
+                // Afficher amis
+                const friendsSection = document.getElementById('searchFriendsSection');
+                const friendsList = document.getElementById('searchFriendsList');
+                if (data.friends && data.friends.length > 0) {
+                    hasResults = true;
+                    friendsSection.style.display = 'block';
+                    friendsList.innerHTML = data.friends.map(friend => {
+                        const displayName = friend.first_name && friend.last_name 
+                            ? `${friend.first_name} ${friend.last_name}` 
+                            : friend.username;
+                        const initials = (friend.first_name?.[0] || friend.username?.[0] || '?').toUpperCase() + 
+                                       (friend.last_name?.[0] || '').toUpperCase();
+                        const bgColor = '#28a745';
+                        
+                        return `
+                            <div onclick="goToProfile(${friend.friend_id})" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.2s;">
+                                <div style="width:40px;height:40px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;flex-shrink:0;">
+                                    ${initials}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:600;font-size:14px;color:#212529;margin-bottom:2px;">${escapeHtml(displayName)}</div>
+                                    <div style="font-size:12px;color:#6c757d;">@${escapeHtml(friend.username)}</div>
+                                </div>
+                                <div style="display:flex;align-items:center;color:#28a745;font-size:16px;">👫</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    friendsSection.style.display = 'none';
+                }
+
+                // Afficher message vide si pas de résultats
+                if (!hasResults) {
+                    searchEmpty.style.display = 'block';
+                } else {
+                    searchEmpty.style.display = 'none';
+                }
+
+                searchResults.style.display = 'block';
+            } catch (error) {
+                console.error('Erreur recherche:', error);
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Fermer la recherche quand on clique ailleurs
+        document.addEventListener('click', (e) => {
+            const search = document.querySelector('.search');
+            const searchResults = document.getElementById('searchResults');
+            if (search && !search.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
 
         // Charger le fil d'actualité depuis l'API backend
         async function loadFeedFromAPI() {
@@ -1118,7 +1449,7 @@ window.goToProfile = function() {
                             <button class="btn" onclick='toggleLike("${p.id}")'>❤ ${p.likes||0}</button>
                             <button class="btn" onclick='openComments("${p.id}")'>💬 ${p.comments?.length||0}</button>
                             <button class="btn" onclick='sharePost("${p.id}")'>🔗 Partager</button>
-                            <button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>
+                            ${p.userId === currentUser?.id ? `<button class="btn" onclick='deletePost("${p.id}")'>🗑️ Supprimer</button>` : ''}
                         </div>
                         <div id="comments-${p.id}" style="margin-top:8px;display:none"></div>
                     `;
@@ -1162,17 +1493,80 @@ window.goToProfile = function() {
                     
                     if (notif.type === 'friend_request') {
                         return `
-                            <div style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(11,132,255,0.1);">
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                    <div style="width:32px; height:32px; border-radius:50%; background:${notif.avatarurl || 'linear-gradient(135deg, #0b84ff, #00d4ff)'}; background-size:cover;"></div>
-                                    <div>
+                            <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(11,132,255,0.08);">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #0b84ff, #00d4ff); background-size:cover; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; flex-shrink:0;">
+                                        ${(displayName[0] || '?').toUpperCase()}
+                                    </div>
+                                    <div style="flex:1; min-width:0;">
                                         <strong style="color:#e6eef8; font-size:13px;">${displayName}</strong>
-                                        <div style="font-size:11px; color:var(--muted);">veut être ton ami</div>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">👥 veut être ton ami</div>
                                     </div>
                                 </div>
                                 <div style="display:flex; gap:6px;">
-                                    <button class="btn" onclick="acceptFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px;">✅ Accepter</button>
-                                    <button class="btn" onclick="rejectFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px;">❌ Refuser</button>
+                                    <button class="btn" onclick="acceptFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px; background:#28a745; color:white; border:none; border-radius:4px;">✅ Accepter</button>
+                                    <button class="btn" onclick="rejectFriendRequest(${notif.id})" style="flex:1; font-size:11px; padding:6px; background:#dc3545; color:white; border:none; border-radius:4px;">❌ Refuser</button>
+                                </div>
+                            </div>
+                        `;
+                    } else if (notif.type === 'photo_post') {
+                        return `
+                            <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(255,193,7,0.08);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #ffc107, #ff9800); background-size:cover; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; flex-shrink:0;">
+                                        ${(displayName[0] || '?').toUpperCase()}
+                                    </div>
+                                    <div style="flex:1; min-width:0; cursor:pointer;" onclick="document.querySelector('[id^=\"post-\"]')?.scrollIntoView({behavior:'smooth'})">
+                                        <strong style="color:#e6eef8; font-size:13px;">${displayName}</strong>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">📸 a posté une photo</div>
+                                        ${notif.preview ? `<div style="font-size:11px; color:#d0d0d0; margin-top:4px; line-height:1.3;">"${escapeHtml(notif.preview.substring(0, 50))}..."</div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (notif.type === 'comment_reply') {
+                        return `
+                            <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(100,200,255,0.08);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #64c8ff, #3ba8ff); background-size:cover; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; flex-shrink:0;">
+                                        ${(displayName[0] || '?').toUpperCase()}
+                                    </div>
+                                    <div style="flex:1; min-width:0;">
+                                        <strong style="color:#e6eef8; font-size:13px;">${displayName}</strong>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">💬 a commenté ton post</div>
+                                        ${notif.preview ? `<div style="font-size:11px; color:#d0d0d0; margin-top:4px; line-height:1.3; padding:6px; background:rgba(255,255,255,0.05); border-radius:3px;">"${escapeHtml(notif.preview.substring(0, 60))}..."</div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (notif.type === 'like_post') {
+                        return `
+                            <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(255,100,100,0.08);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #ff6464, #ff4444); background-size:cover; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; flex-shrink:0;">
+                                        ${(displayName[0] || '?').toUpperCase()}
+                                    </div>
+                                    <div style="flex:1; min-width:0;">
+                                        <strong style="color:#e6eef8; font-size:13px;">${displayName}</strong>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">❤️ a aimé ton post</div>
+                                        ${notif.preview ? `<div style="font-size:11px; color:#d0d0d0; margin-top:4px; line-height:1.3; padding:6px; background:rgba(255,255,255,0.05); border-radius:3px;">"${escapeHtml(notif.preview.substring(0, 60))}..."</div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (notif.type === 'announcement') {
+                        return `
+                            <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(100,150,255,0.08);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #6495ff, #4477ff); background-size:cover; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; flex-shrink:0; font-size:18px;">
+                                        📢
+                                    </div>
+                                    <div style="flex:1; min-width:0;">
+                                        <strong style="color:#e6eef8; font-size:13px;">Nouvelle annonce</strong>
+                                        <div style="font-size:11px; color:var(--muted); margin-top:2px;">Par ${escapeHtml(notif.author || 'Enseignant')}</div>
+                                        ${notif.title ? `<div style="font-size:11px; color:#d0d0d0; margin-top:4px; line-height:1.3; padding:6px; background:rgba(255,255,255,0.05); border-radius:3px;"><strong>${escapeHtml(notif.title.substring(0, 80))}</strong></div>` : ''}
+                                        ${notif.class_name ? `<div style="font-size:10px; color:var(--muted); margin-top:4px;">📚 ${escapeHtml(notif.class_name)}</div>` : ''}
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -1232,7 +1626,8 @@ window.goToProfile = function() {
             }
         }
 
-        function toggleNotifications() {
+        function toggleNotifications(event) {
+            event.stopPropagation(); // Empêcher le bubbling
             const panel = document.getElementById('notificationsPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
             if (panel.style.display === 'block') {

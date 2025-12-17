@@ -433,6 +433,17 @@
       font-family: inherit;
     }
 
+    .form-group select {
+      background-color: rgba(15, 23, 32, 0.8);
+      cursor: pointer;
+    }
+
+    .form-group select option {
+      background: #0f1720;
+      color: #e6eef8;
+      padding: 8px;
+    }
+
     .form-group textarea {
       resize: vertical;
       min-height: 80px;
@@ -444,6 +455,10 @@
       outline: none;
       border-color: var(--accent);
       background: rgba(255,255,255,0.08);
+    }
+
+    .form-group select:focus {
+      background-color: rgba(11, 132, 255, 0.1);
     }
 
     .modal-actions {
@@ -617,15 +632,19 @@
   </style>
 </head>
 <body>
+  <script>
+    const THEME_STORAGE_KEY = 'selectedTheme';
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+    if (saved === 'light') {
+      document.body.classList.add('theme-light');
+    }
+  </script>
   <div class="container">
     <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <button class="btn" onclick="goBack()">← Retour</button>
         <strong style="font-size: 14px;">Messagerie MiniRéseau</strong>
-      </div>
-      <div class="topbar-center">
-        <input type="text" id="searchInput" class="composer-input" style="width: 250px;" placeholder="🔍 Rechercher...">
       </div>
       <div class="topbar-right">
         <span style="font-size: 11px; color: var(--muted);" id="userInfo"></span>
@@ -649,7 +668,7 @@
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal')">💬 Nouveau privé</button>
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal'); document.getElementById('convType').value='group'; updateConvForm();">👥 Nouveau groupe</button>
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="shareDoc()">📎 Partager un document</button>
-      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="alert('Espace annonces à venir (board).')">📢 Annonce rapide</button>
+      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('announcementModal')">📢 Annonce rapide</button>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -776,6 +795,35 @@
     </div>
   </div>
 
+  <!-- ANNOUNCEMENT MODAL -->
+  <div class="modal" id="announcementModal">
+    <div class="modal-content">
+      <h3>📢 Publier une annonce</h3>
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" id="announcementTitle" placeholder="Titre de l'annonce...">
+      </div>
+      <div class="form-group">
+        <label>Classe *</label>
+        <select id="announcementClass">
+          <option value="">-- Toutes les classes --</option>
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="A3">A3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contenu *</label>
+        <textarea id="announcementContent" placeholder="Contenu de l'annonce..." style="height: 120px;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('announcementModal')">Annuler</button>
+        <button class="btn primary" onclick="submitAnnouncement()">Publier</button>
+      </div>
+      <div id="announcementMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
+    </div>
+  </div>
+
   <!-- GROUP MEMBERS MODAL -->
   <div class="modal" id="groupMembersModal">
     <div class="modal-content">
@@ -790,6 +838,7 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeModal('groupMembersModal')">Fermer</button>
         <button class="btn primary" onclick="addGroupMember()">Ajouter</button>
+        <button class="btn" style="background: #ef4444; color: white;" onclick="leaveCurrentGroup()">👋 Quitter le groupe</button>
       </div>
       <div id="groupMembersMessage" style="margin-top: 8px; text-align: center; font-size: 11px;"></div>
     </div>
@@ -985,6 +1034,9 @@
       if (tab === 'events') {
         openModal('eventModal');
       }
+      if (tab === 'board') {
+        loadAndDisplayAnnouncements();
+      }
       renderSidebar();
     }
 
@@ -1036,27 +1088,66 @@
       } else if (type === 'group') {
         const name = document.getElementById('groupName').value.trim();
         const desc = document.getElementById('groupDesc').value.trim();
-        const rawMembers = (document.getElementById('groupMembers').value || '').trim();
+        
         if (!name) {
           showMessage('convMessage', '❌ Nom requis', 'var(--danger)');
           return;
         }
-        let members = [state.me.username];
-        if (rawMembers) {
-          members = members.concat(rawMembers.split(',').map(m => m.trim()).filter(Boolean));
+
+        // Obtenir les IDs des membres sélectionnés
+        const memberIds = Array.from(selectedGroupFriendIds).map(id => parseInt(id));
+
+        // Créer le groupe dans la base de données
+        const token = localStorage.getItem('token');
+        try {
+          const res = await fetch('http://localhost:3000/api/ami/groups/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              name: name,
+              description: desc,
+              memberIds: memberIds
+            })
+          });
+
+          if (!res.ok) {
+            const error = await res.json();
+            showMessage('convMessage', `❌ Erreur: ${error.error || 'Impossible de créer le groupe'}`, 'var(--danger)');
+            return;
+          }
+
+          const groupData = await res.json();
+          console.log('✓ Groupe créé:', groupData);
+
+          // Créer l'objet conversation local avec les bonnes données
+          let members = [state.me.username];
+          // Ajouter les noms des membres sélectionnés
+          for (const id of selectedGroupFriendIds) {
+            const friend = friendsForMessaging.find(f => f.id === parseInt(id));
+            if (friend) {
+              members.push(getFriendDisplayName(friend));
+            }
+          }
+
+          conv = {
+            id: 'group_' + groupData.groupId,
+            type: 'group',
+            title: name,
+            description: desc,
+            members: members,
+            messages: [],
+            createdAt: Date.now(),
+            unread: 0,
+            groupId: groupData.groupId
+          };
+        } catch (error) {
+          console.error('Erreur création groupe:', error);
+          showMessage('convMessage', `❌ Erreur réseau: ${error.message}`, 'var(--danger)');
+          return;
         }
-        // supprimer les doublons
-        members = Array.from(new Set(members));
-        conv = {
-          id: uid(),
-          type: 'group',
-          title: name,
-          description: desc,
-          members,
-          messages: [],
-          createdAt: Date.now(),
-          unread: 0
-        };
       } else if (type === 'thread') {
         const subject = document.getElementById('threadSubject').value.trim();
         if (!subject) {
@@ -1082,6 +1173,10 @@
         renderSidebar();
         openConversation(conv.id);
         clearForm();
+        // Recharger les groupes depuis la DB pour s'assurer que tout est à jour
+        if (type === 'group') {
+          loadConversationsFromDB();
+        }
       }, 600);
     }
 
@@ -1126,6 +1221,171 @@
         renderSidebar();
         openConversation(conv.id);
       }, 700);
+    }
+
+    async function submitAnnouncement() {
+      const title = document.getElementById('announcementTitle').value.trim();
+      const content = document.getElementById('announcementContent').value.trim();
+      const className = document.getElementById('announcementClass').value || null;
+      const msgEl = document.getElementById('announcementMessage');
+
+      if (!title || !content) {
+        msgEl.textContent = '❌ Titre et contenu requis';
+        msgEl.style.color = 'var(--danger)';
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      try {
+        const res = await fetch('http://localhost:3000/api/content/announcements', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            title,
+            content,
+            author: user.username || 'Enseignant',
+            class_name: className
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          msgEl.textContent = '❌ ' + (err.error || 'Erreur serveur');
+          msgEl.style.color = 'var(--danger)';
+          return;
+        }
+
+        msgEl.textContent = '✓ Annonce publiée!';
+        msgEl.style.color = 'var(--success)';
+
+        setTimeout(() => {
+          document.getElementById('announcementTitle').value = '';
+          document.getElementById('announcementContent').value = '';
+          document.getElementById('announcementClass').value = '';
+          closeModal('announcementModal');
+        }, 700);
+      } catch (e) {
+        console.error('Erreur publication annonce:', e);
+        msgEl.textContent = '❌ Erreur réseau';
+        msgEl.style.color = 'var(--danger)';
+      }
+    }
+
+    async function loadAndDisplayAnnouncements() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/api/content/announcements', {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!res.ok) {
+          console.warn('Impossible de charger les annonces');
+          return;
+        }
+
+        const data = await res.json();
+        const announcements = data.announcements || [];
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Afficher les annonces dans le chat panel
+        const chatPanel = document.querySelector('.chat-panel');
+        if (!chatPanel) return;
+
+        let html = '<div style="padding: 16px; overflow-y: auto;">';
+        html += '<h2 style="margin-top: 0;">📢 Annonces</h2>';
+
+        if (announcements.length === 0) {
+          html += '<p style="color: var(--muted); text-align: center; padding: 20px;">Aucune annonce pour le moment</p>';
+        } else {
+          announcements.forEach(ann => {
+            const date = new Date(ann.created_at).toLocaleDateString('fr-FR', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            // Montrer le bouton seulement si c'est l'auteur
+            const isAuthor = ann.author_id && parseInt(ann.author_id) === parseInt(currentUser.id);
+            const deleteBtn = isAuthor ? `<button class="btn" onclick="deleteAnnouncement(${ann.id})" style="padding: 6px 10px; margin-left: 8px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; white-space: nowrap;">🗑️ Supprimer</button>` : '';
+            
+            html += `
+              <div style="background: var(--bg-light); border-left: 4px solid var(--primary); padding: 12px; margin-bottom: 12px; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                  <div style="flex: 1; min-width: 0;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--text);">${escapeHtml(ann.title)}</h4>
+                    <p style="margin: 0 0 8px 0; color: var(--text); font-size: 13px;">${escapeHtml(ann.content)}</p>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
+                      <span>Par ${escapeHtml(ann.author || 'Enseignant')}</span>
+                      <span>${date}</span>
+                    </div>
+                    ${ann.class_name ? `<div style="font-size: 11px; color: var(--muted); margin-top: 6px;">📚 Classe: <strong>${escapeHtml(ann.class_name)}</strong></div>` : ''}
+                  </div>
+                  ${deleteBtn}
+                </div>
+              </div>
+            `;
+          });
+        }
+        html += '</div>';
+
+        chatPanel.innerHTML = html;
+
+        // Changer le titre du chat
+        const chatHeader = document.querySelector('.chat-header h2');
+        if (chatHeader) chatHeader.textContent = '📢 Annonces';
+      } catch (e) {
+        console.error('Erreur chargement annonces:', e);
+      }
+    }
+
+    async function deleteAnnouncement(announcementId) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce?')) return;
+
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/api/content/announcements/${announcementId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert('❌ ' + (err.error || 'Erreur lors de la suppression'));
+          return;
+        }
+
+        alert('✓ Annonce supprimée');
+        loadAndDisplayAnnouncements();
+      } catch (e) {
+        console.error('Erreur suppression annonce:', e);
+        alert('❌ Erreur réseau');
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     async function openConversation(convId) {
@@ -1822,6 +2082,49 @@
       showMessage('groupMembersMessage', '✓ Membre ajouté', 'var(--success)');
     }
 
+    async function leaveCurrentGroup() {
+      const conv = state.conversations.find(c => c.id === currentConvId);
+      if (!conv || conv.type !== 'group') {
+        alert('❌ Impossible de quitter: pas de groupe sélectionné');
+        return;
+      }
+
+      if (!confirm(`Êtes-vous sûr de vouloir quitter le groupe "${conv.name}"?`)) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/api/ami/groups/leave`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ groupId: conv.id })
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          alert('❌ Erreur: ' + (error.message || 'Impossible de quitter le groupe'));
+          return;
+        }
+
+        alert('✓ Vous avez quitté le groupe');
+        closeModal('groupMembersModal');
+        
+        // Supprimer la conversation de la liste
+        state.conversations = state.conversations.filter(c => c.id !== currentConvId);
+        saveState();
+        currentConvId = null;
+        
+        // Recharger les conversations
+        renderConversations();
+        renderChat(null);
+      } catch (e) {
+        console.error('Erreur:', e);
+        alert('❌ Erreur réseau');
+      }
+    }
+
     function removeGroupMember(index) {
       const conv = state.conversations.find(c => c.id === currentConvId);
       if (!conv || conv.type !== 'group' || !conv.members) return;
@@ -1871,11 +2174,11 @@
       if (!token) return;
 
       try {
-        const res = await fetch('http://localhost:3000/api/ami/friends', {
+        const res = await fetch('http://localhost:3000/api/messages/contacts', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         if (!res.ok) {
-          console.warn('Impossible de charger les amis pour la messagerie:', res.status);
+          console.warn('Impossible de charger les contacts pour la messagerie:', res.status);
           return;
         }
         const data = await res.json();
@@ -1888,7 +2191,7 @@
         );
         renderGroupFriendSuggestions();
       } catch (e) {
-        console.error('Erreur chargement amis messagerie:', e);
+        console.error('Erreur chargement contacts messagerie:', e);
       }
     }
 
@@ -1977,6 +2280,8 @@
     // ========================================
     // INITIALIZATION
     // ========================================
+    const API_BASE = 'http://localhost:3000';
+    
     function init() {
       // Vérifier qu'une session existe, sinon renvoyer vers la page de connexion
       const token = localStorage.getItem('token');
@@ -2006,12 +2311,6 @@
       // Charger les conversations depuis la DB
       loadConversationsFromDB();
       renderSidebar();
-
-      // Search
-      document.getElementById('searchInput').addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        renderSidebar();
-      });
 
       // Enter key for message
       document.getElementById('messageInput').addEventListener('keydown', (e) => {
@@ -2057,9 +2356,46 @@
           contactId: conv.other_user_id // Stocker l'ID du contact pour les requêtes futures
         }));
 
-        // Fusionner avec les conversations existantes (garder les groupes locaux)
-        const localConvs = state.conversations.filter(c => c.type !== 'private');
-        state.conversations = [...dbConversations, ...localConvs];
+        // Charger les groupes depuis le backend (seulement ceux dont l'utilisateur est membre)
+        const groupsRes = await fetch('http://localhost:3000/api/ami/groups', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        let groupConversations = [];
+        if (groupsRes.ok) {
+          const groups = await groupsRes.json();
+          
+          // Pour chaque groupe, charger les membres
+          for (const group of groups) {
+            let members = [];
+            try {
+              const membersRes = await fetch(`http://localhost:3000/api/ami/groups/${group.id}/members`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (membersRes.ok) {
+                const membersList = await membersRes.json();
+                members = membersList.map(m => m.username);
+              }
+            } catch (e) {
+              console.warn('Impossible de charger les membres du groupe:', e);
+            }
+            
+            groupConversations.push({
+              id: 'group_' + group.id,
+              type: 'group',
+              title: group.name,
+              members: members,
+              description: group.description,
+              messages: [],
+              createdAt: Date.now(),
+              groupId: group.id,
+              memberCount: group.memberCount || 0
+            });
+          }
+        }
+
+        // Remplacer complètement l'état avec les conversations vérifiées du backend
+        state.conversations = [...dbConversations, ...groupConversations];
         saveState();
         renderSidebar();
       } catch (error) {
