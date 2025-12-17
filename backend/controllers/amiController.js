@@ -223,13 +223,13 @@ module.exports = {
     getMyGroups: async (req, res) => {
         try {
             const result = await pool.query(
-                `SELECT g.id, g.name, g.description, COUNT(gm.user_id) as memberCount
+                `SELECT g.id, g.name, g.description, g.creator_id, g.created_at, COUNT(gm.user_id) as memberCount
                  FROM groups g
                  LEFT JOIN group_members gm ON g.id = gm.group_id
                  WHERE g.id IN (
                     SELECT group_id FROM group_members WHERE user_id = $1
                  )
-                 GROUP BY g.id, g.name, g.description
+                 GROUP BY g.id, g.name, g.description, g.creator_id, g.created_at
                  ORDER BY g.created_at DESC`,
                 [req.user.id]
             );
@@ -338,6 +338,39 @@ module.exports = {
             res.json({ isFriend });
         } catch (error) {
             console.error('❌ Erreur vérification amitié:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    },
+
+    // Obtenir les membres d'un groupe
+    getGroupMembers: async (req, res) => {
+        try {
+            const { groupId } = req.params;
+            const userId = req.user.id;
+
+            // Vérifier que l'utilisateur est membre du groupe
+            const memberCheck = await pool.query(
+                `SELECT id FROM group_members WHERE group_id = $1 AND user_id = $2`,
+                [groupId, userId]
+            );
+
+            if (memberCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'Vous n\'êtes pas membre de ce groupe' });
+            }
+
+            // Récupérer tous les membres du groupe
+            const result = await pool.query(
+                `SELECT u.id, u.username, u.email, u.avatarurl
+                 FROM users u
+                 JOIN group_members gm ON u.id = gm.user_id
+                 WHERE gm.group_id = $1
+                 ORDER BY u.username`,
+                [groupId]
+            );
+
+            res.json(result.rows);
+        } catch (error) {
+            console.error('❌ Erreur membres groupe:', error);
             res.status(500).json({ error: 'Erreur serveur' });
         }
     }

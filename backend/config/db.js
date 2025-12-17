@@ -4,8 +4,9 @@ const { Pool } = require('pg');
 const pool = new Pool({
     user: 'postgres',        // ton utilisateur PostgreSQL
     host: 'localhost',       // host PostgreSQL
-    database: 'MiniRéseau',  // nom de ta base
-    password: 'passer123',      // mot de passe
+    database: 'MiniRéseau',
+    password: 'talida',  // mot de passe PostgreSQL
+
     port: 5432,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,

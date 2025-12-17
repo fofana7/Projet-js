@@ -10,6 +10,7 @@ router.get('/', protect, amiController.getAllUsers);
 router.get('/friends', protect, amiController.getMyFriends);
 router.get('/requests', protect, amiController.getFriendRequests);
 router.get('/groups', protect, amiController.getMyGroups);
+router.get('/groups/:groupId/members', protect, amiController.getGroupMembers);
 router.get('/check/:friendId', protect, amiController.checkFriendship);
 
 // Actions sur les amis
