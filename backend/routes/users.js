@@ -9,6 +9,9 @@ const userController = require('../controllers/userController');
 // Assurez-vous que le fichier '../middleware/auth' existe et exporte 'protect'
 const { protect } = require('../middleware/auth'); 
 
+// GET /api/users/me/export (Export de toutes les données de l'utilisateur connecté)
+router.get('/me/export', protect, userController.exportMyData);
+
 // GET /api/users/me (Récupère le profil de l'utilisateur connecté)
 // IMPORTANT: Doit être AVANT /:id sinon 'me' est traité comme un ID !
 router.get('/me', protect, userController.getMe);
@@ -22,5 +25,8 @@ router.get('/:id', protect, userController.getUserById);
 
 // PUT /api/users/me (Mise à jour du profil)
 router.put('/me', protect, userController.updateProfile);
+
+// DELETE /api/users/me (Supprime définitivement le compte de l'utilisateur connecté)
+router.delete('/me', protect, userController.deleteMe);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const pool = new Pool({
     user: 'postgres',        // ton utilisateur PostgreSQL
     host: 'localhost',       // host PostgreSQL
     database: 'MiniRéseau',
-    password: 'passer123',  // mot de passe PostgreSQL
+    password: 'talida',  // mot de passe PostgreSQL
 
     port: 5432,
     idleTimeoutMillis: 30000,
