@@ -148,16 +148,17 @@
                         <div class="muted" id="myHandle">@guest · Statut</div>
                     </div>
                 </div>
-                <nav class="menu">
-                  <!-- Navigation cohérente : onglets internes avec showTab() -->
-                  <button id="feed-btn" onclick="showTab('feed')">🏠 Fil d'actualité</button>
-                  <button id="messages-btn" onclick="location.href='frontend/pages/message-v2.html'">💬 Messagerie</button>
-                  <button id="announcements-btn" onclick="location.href='frontend/pages/message-v2.html?tab=board'" style="display:none;">📢 Annonces</button>
-                  <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
-                  <button id="profile-btn" onclick="goToProfile()">👤 Profil</button>
-                  <button id="constellation-btn" onclick="location.href='constellation.html'">🌌 Constellation</button>
-                  <button id="settings-btn" onclick="location.href='page_parametre.html'">⚙️ Paramètres</button>
-                </nav>
+                                <nav class="menu">
+                                    <!-- Navigation cohérente : onglets internes avec showTab() -->
+                                    <button id="feed-btn" onclick="showTab('feed')">🏠 Fil d'actualité</button>
+                                    <button id="messages-btn" onclick="location.href='frontend/pages/message-v2.html'">💬 Messagerie</button>
+                                    <button id="announcements-btn" onclick="location.href='frontend/pages/message-v2.html?tab=board'" style="display:none;">📢 Annonces</button>
+                                    <button id="teacher-dashboard-btn" onclick="location.href='dashboard-enseignant.html'" style="display:none;">👨‍🏫 Espace enseignant</button>
+                                    <button id="friends-btn" onclick="location.href='ami.html'">👥 Amis</button>
+                                    <button id="profile-btn" onclick="goToProfile()">👤 Profil</button>
+                                    <button id="constellation-btn" onclick="location.href='constellation.html'">🌌 Constellation</button>
+                                    <button id="settings-btn" onclick="location.href='page_parametre.html'">⚙️ Paramètres</button>
+                                </nav>
             </div>
 
             <div style="height:12px"></div>
@@ -505,7 +506,15 @@ window.goToProfile = function(userId) {
                     // Afficher le bouton Annonces si c'est un enseignant ou admin
                     const announcementBtn = document.getElementById('announcements-btn');
                     if (announcementBtn && (currentUser.role === 'enseignant' || currentUser.role === 'admin')) {
-                        announcementBtn.style.display = 'block';
+                        // Supprime l'override inline pour laisser le CSS appliquer display:flex
+                        announcementBtn.style.display = '';
+                    }
+
+                    // Afficher le bouton retour espace enseignant si rôle enseignant/admin
+                    const teacherDashboardBtn = document.getElementById('teacher-dashboard-btn');
+                    if (teacherDashboardBtn && (currentUser.role === 'enseignant' || currentUser.role === 'admin')) {
+                        // Supprime l'override inline pour laisser le CSS appliquer display:flex
+                        teacherDashboardBtn.style.display = '';
                     }
                     
                     // Charger les notifications

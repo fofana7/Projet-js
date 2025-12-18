@@ -335,7 +335,7 @@
       <div class="topbar-right">
         <nav class="topbar-nav">
           <button class="nav-btn" onclick="window.location.href='index.html'">Fil étudiant</button>
-          <button class="nav-btn" onclick="window.location.href='frontend/pages/message.html'">Messagerie</button>
+          <button class="nav-btn" onclick="window.location.href='frontend/pages/message-v2.html'">Messagerie</button>
           <button class="nav-btn" onclick="window.location.href='ami.html'">Réseau d'amis</button>
           <button class="nav-btn" onclick="window.location.href='constellation.html'">Constellation</button>
           <button class="nav-btn" onclick="window.location.href='profil.html'">Profil</button>
@@ -370,7 +370,7 @@
               échanges et partager des documents avec vos étudiants.
             </div>
             <div class="actions-row">
-              <a href="frontend/pages/message.html" class="action-btn">
+              <a href="frontend/pages/message-v2.html" class="action-btn">
                 <span>💬</span> Ouvrir la messagerie
               </a>
               <a href="constellation.html" class="action-btn">
@@ -413,7 +413,9 @@
             <div class="field-row">
               <div>
                 <label class="field-label" for="classNameInput">Classe</label>
-                <input id="classNameInput" class="field-input" placeholder="Ex: L3 INFO A" />
+				<select id="classNameInput" class="field-input">
+					<option value="">Sélectionnez une classe…</option>
+				</select>
               </div>
               <div>
                 <label class="field-label" for="classTitleInput">Titre</label>
@@ -431,34 +433,6 @@
           <div class="ann-list" id="classAnnList" style="display:none;"></div>
         </div>
         
-        <!-- Bloc création de groupes de classe -->
-        <div style="margin-top:16px;border-top:1px solid rgba(30,64,175,0.6);padding-top:12px;">
-          <div class="card-header" style="margin-bottom:6px;">
-            <div>
-              <div class="card-title" style="font-size:14px;">Créer un groupe de classe</div>
-              <div class="card-subtitle">Idéal si vous suivez plusieurs promos.</div>
-            </div>
-          </div>
-
-          <form onsubmit="createClassGroup(event)">
-            <div class="field-row">
-              <div>
-                <label class="field-label" for="groupClassNameInput">Classe</label>
-                <input id="groupClassNameInput" class="field-input" placeholder="Ex: L2 DATA B" />
-              </div>
-              <div>
-                <label class="field-label" for="groupNameInput">Nom du groupe</label>
-                <input id="groupNameInput" class="field-input" placeholder="Projet IA, TD 3, etc." />
-              </div>
-            </div>
-            <div class="field-full">
-              <label class="field-label" for="groupDescInput">Description (optionnel)</label>
-              <textarea id="groupDescInput" class="field-textarea" placeholder="Objet du groupe, modalités, etc."></textarea>
-            </div>
-            <button type="submit" class="btn-small">👥 Créer le groupe de classe</button>
-            <div id="classGroupStatus" class="status-text"></div>
-          </form>
-        </div>
       </section>
 
       <aside class="card">
@@ -476,7 +450,9 @@
             </div>
             <div class="tile-body">
               Nombre de groupes que vous encadrez dans la messagerie.
-              (À connecter plus tard aux vraies données.)
+              <div style="margin-top:6px;font-size:11px;">
+                Actuellement : <strong id="statGroups">0</strong> groupes.
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -487,6 +463,9 @@
             <div class="tile-body">
               Accès rapide aux échanges de vos différentes promos via la
               constellation et le réseau d'amis.
+              <div style="margin-top:6px;font-size:11px;">
+                Classes ciblées par vos annonces : <strong id="statClasses">0</strong>.
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -509,6 +488,10 @@
 
   <script src="auth.js"></script>
   <script>
+    let teacherGroups = [];
+    let teacherAnnouncements = [];
+    let availableClasses = [];
+
     // Verrouiller cette page pour le rôle "enseignant" uniquement
     (function () {
       try {
@@ -518,8 +501,10 @@
         if (label) {
           label.textContent = `Connecté en tant que ${user.username}`;
         }
-        // Charger les annonces du prof
+        // Charger les données enseignant
         loadMyAnnouncements();
+        loadTeacherGroups();
+        loadAvailableClasses();
       } catch (e) {
         console.error('Erreur rôle enseignant :', e);
       }
@@ -546,11 +531,13 @@
         
         // Filtrer les annonces créées par le prof connecté
         const myAnnouncements = (data.announcements || []).filter(a => a.author_id === user.id);
+        teacherAnnouncements = myAnnouncements;
         
         const listEl = document.getElementById('myAnnouncementsList');
         
         if (!myAnnouncements || myAnnouncements.length === 0) {
           listEl.innerHTML = '<div style="color: var(--muted); font-size: 12px;">Vous n\'avez pas encore publié d\'annonces.</div>';
+          updateTeacherSummary();
           return;
         }
 
@@ -572,9 +559,75 @@
             </div>
           `;
         }).join('');
+
+        updateTeacherSummary();
       } catch (err) {
         console.error('Erreur chargement annonces:', err);
         document.getElementById('myAnnouncementsList').innerHTML = '<div style="color: var(--muted); font-size: 12px;">Erreur chargement annonces</div>';
+      }
+    }
+
+    async function loadTeacherGroups() {
+      const token = window.getToken ? window.getToken() : localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/ami/groups`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Erreur API groupes');
+        const data = await res.json();
+        teacherGroups = Array.isArray(data) ? data : [];
+        updateTeacherSummary();
+      } catch (err) {
+        console.error('Erreur chargement groupes enseignant:', err);
+      }
+    }
+
+    async function loadAvailableClasses() {
+      try {
+        const res = await fetch(`${API_BASE}/classes`);
+        if (!res.ok) throw new Error('Erreur API classes');
+        const data = await res.json();
+        availableClasses = data.classes || [];
+
+        const announceSelect = document.getElementById('classNameInput');
+        const groupSelect = document.getElementById('groupClassNameInput');
+
+        const buildOptionsHtml = () => {
+          return ['<option value="">Sélectionnez une classe…</option>'].concat(
+            availableClasses.map(c => {
+              const label = c.label ? `${c.code} – ${c.label}` : c.code;
+              return `<option value="${c.code}">${label}</option>`;
+            })
+          ).join('');
+        };
+
+        const optionsHtml = buildOptionsHtml();
+        if (announceSelect) announceSelect.innerHTML = optionsHtml;
+        if (groupSelect) groupSelect.innerHTML = optionsHtml;
+      } catch (err) {
+        console.error('Erreur chargement classes:', err);
+      }
+    }
+
+    function updateTeacherSummary() {
+      try {
+        const groupsEl = document.getElementById('statGroups');
+        const classesEl = document.getElementById('statClasses');
+        if (groupsEl) {
+          groupsEl.textContent = teacherGroups.length || 0;
+        }
+        if (classesEl) {
+          const classes = new Set(
+            (teacherAnnouncements || [])
+              .map(a => a.class_name)
+              .filter(Boolean)
+          );
+          classesEl.textContent = classes.size || 0;
+        }
+      } catch (e) {
+        console.error('Erreur mise à jour résumé enseignant:', e);
       }
     }
 
@@ -593,20 +646,32 @@
       statusEl.textContent = 'Envoi en cours…';
       try {
         const token = window.getToken ? window.getToken() : null;
-        const res = await fetch(`${API_BASE}/content/classe`, {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {};
+
+        // Utiliser l'API centrale des annonces pour diffuser aux étudiants
+        const res = await fetch(`${API_BASE}/content/announcements`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ title, content, class_name: classe })
+          body: JSON.stringify({
+            title,
+            content,
+            author: user.username || 'Enseignant',
+            class_name: classe
+          })
         });
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.error || 'Erreur lors de la publication');
         }
         statusEl.textContent = `Annonce publiée pour ${classe}.`;
+        document.getElementById('classTitleInput').value = '';
         document.getElementById('classContentInput').value = '';
+        // Recharger les listes côté enseignant
+        loadMyAnnouncements();
         loadClassAnnouncements(classe);
       } catch (err) {
         console.error(err);
@@ -622,9 +687,30 @@
         return;
       }
       try {
-        const res = await fetch(`${API_BASE}/content/announcements`);
+        const token = window.getToken ? window.getToken() : localStorage.getItem('token');
+        if (!token) {
+          console.warn('Aucun token disponible pour charger les annonces de classe');
+          list.style.display = 'none';
+          list.innerHTML = '';
+          return;
+        }
+
+        const res = await fetch(`${API_BASE}/content/announcements`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          console.warn('Erreur API annonces de classe');
+          list.style.display = 'none';
+          list.innerHTML = '';
+          return;
+        }
+
         const data = await res.json();
-        const anns = (data.announcements || []).filter(a => a.author === classe);
+        // Filtrer les annonces ciblant explicitement cette classe
+        const anns = (data.announcements || []).filter(a => a.class_name === classe);
         if (!anns.length) {
           list.style.display = 'none';
           list.innerHTML = '';
@@ -640,44 +726,7 @@
       }
     }
 
-    async function createClassGroup(event) {
-      event.preventDefault();
-      const classe = document.getElementById('groupClassNameInput').value.trim();
-      const groupName = document.getElementById('groupNameInput').value.trim();
-      const desc = document.getElementById('groupDescInput').value.trim();
-      const statusEl = document.getElementById('classGroupStatus');
-
-      if (!classe || !groupName) {
-        statusEl.textContent = 'Indiquez au minimum la classe et le nom du groupe.';
-        return;
-      }
-
-      statusEl.textContent = 'Création du groupe…';
-      try {
-        const token = window.getToken ? window.getToken() : null;
-        const res = await fetch(`${API_BASE}/ami/groups/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: `${classe} – ${groupName}`,
-            description: desc || `Groupe de classe ${classe}`,
-            memberIds: [] // les étudiants pourront être ajoutés plus tard
-          })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || data.message || 'Erreur lors de la création du groupe');
-        }
-        statusEl.textContent = `Groupe "${classe} – ${groupName}" créé.`;
-        document.getElementById('groupNameInput').value = '';
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = err.message;
-      }
-    }
+    loadAvailableClasses();
   </script>
 </body>
 </html>

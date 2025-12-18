@@ -488,12 +488,8 @@
 
       <div class="field">
         <label>Classe</label>
-        <select>
-          <option>Sup</option>
-          <option>Sp2</option>
-          <option>Ingé1</option>
-          <option>Ingé2</option>
-          <option>Ingé3</option>
+        <select id="settingsClasseSelect">
+          <option value="">Chargement des classes…</option>
         </select>
       </div>
 
@@ -765,6 +761,49 @@
   // Charger immédiatement les infos utilisateur pour les paramètres
   loadSettingsUser();
 
+  // Charger la liste des classes pour le sélecteur de paramètres
+  async function loadSettingsClasses() {
+    const select = document.getElementById('settingsClasseSelect');
+    if (!select) return;
+
+    try {
+      const res = await fetch(window.location.origin + '/api/classes');
+      if (!res.ok) throw new Error('Erreur API classes');
+      const data = await res.json();
+      const classes = data.classes || [];
+
+      // Récupérer la classe actuelle de l'utilisateur si dispo
+      let currentClasse = '';
+      try {
+        const userStr = localStorage.getItem('user');
+        const u = userStr ? JSON.parse(userStr) : null;
+        if (u && u.classe) currentClasse = u.classe;
+      } catch {}
+
+      select.innerHTML = '<option value="">Sélectionne ta classe…</option>';
+      classes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        opt.textContent = c.label ? `${c.code} – ${c.label}` : c.code;
+        if (currentClasse && currentClasse === c.code) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      // En cas d'erreur, proposer quelques valeurs par défaut
+      select.innerHTML = '';
+      ['Sup','Sp2','Ingé1','Ingé2','Ingé3'].forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = code;
+        select.appendChild(opt);
+      });
+    }
+  }
+
+  loadSettingsClasses();
+
   // ========== NAVIGATION SIDEBAR ==========
   document.querySelectorAll('.sidebar-icon').forEach((icon, index) => {
     icon.addEventListener('click', () => {
@@ -878,15 +917,41 @@
         return;
       }
 
-      alert("Mot de passe mis à jour avec succès !");
-      if(currentPasswordInput) currentPasswordInput.value = '';
-      if(newPasswordInput) newPasswordInput.value = '';
-      if(confirmPasswordInput) confirmPasswordInput.value = '';
-      if(confirmMessage) confirmMessage.textContent = '';
-      if(passwordStrength) {
-        passwordStrength.textContent = 'Force du mot de passe : Faible';
-        passwordStrength.style.color = 'red';
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Session expirée. Merci de vous reconnecter.");
+        window.location.href = 'login.html';
+        return;
       }
+
+      fetch(`${SETTINGS_API_BASE}/api/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd })
+      })
+      .then(res => res.json().then(body => ({ ok: res.ok, body })))
+      .then(({ ok, body }) => {
+        if (!ok) {
+          alert(body.error || 'Erreur lors de la mise à jour du mot de passe');
+          return;
+        }
+
+        alert('Mot de passe mis à jour avec succès. Vous pourrez utiliser le nouveau à la prochaine connexion.');
+        if(currentPasswordInput) currentPasswordInput.value = '';
+        if(newPasswordInput) newPasswordInput.value = '';
+        if(confirmPasswordInput) confirmPasswordInput.value = '';
+        if(confirmMessage) confirmMessage.textContent = '';
+        if(passwordStrength) {
+          passwordStrength.textContent = 'Force du mot de passe : Faible';
+          passwordStrength.style.color = 'red';
+        }
+      })
+      .catch(() => {
+        alert('Erreur réseau lors de la mise à jour du mot de passe');
+      });
     });
   }
 
@@ -948,7 +1013,8 @@
   });
 
   // ========== THÈME (clair / sombre / auto) ==========
-  const THEME_STORAGE_KEY = 'minireseau:theme';
+  // Utiliser la même clé que le reste de l'appli pour synchroniser le thème
+  const THEME_STORAGE_KEY = 'selectedTheme';
 
   function applyTheme(theme) {
     const body = document.body;
@@ -969,7 +1035,7 @@
     const select = document.getElementById('themeSelect');
     if (!select) return;
 
-    const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
     if ([ 'light', 'dark', 'auto' ].includes(saved)) {
       select.value = saved;
     }
