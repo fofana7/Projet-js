@@ -102,3 +102,45 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: 'Erreur serveur', details: err.message });
     }
 };
+
+// =====================
+// CHANGE PASSWORD (utilisé depuis la page paramètres)
+// =====================
+exports.changePassword = async (req, res) => {
+    const userId = req.user && req.user.id;
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié' });
+    }
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Mot de passe actuel et nouveau mot de passe requis' });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
+    }
+
+    try {
+        const result = await pool.query('SELECT id, password FROM users WHERE id = $1', [userId]);
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+
+        const match = await bcrypt.compare(currentPassword, user.password);
+        if (!match) {
+            return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+        }
+
+        const hashedNew = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedNew, userId]);
+
+        res.json({ message: 'Mot de passe mis à jour avec succès' });
+    } catch (err) {
+        console.error('AUTH CHANGE PASSWORD ERROR:', err);
+        res.status(500).json({ error: 'Erreur serveur', details: err.message });
+    }
+};

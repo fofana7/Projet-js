@@ -224,6 +224,21 @@ async function initializeDatabase() {
         `);
         console.log('✓ Table like_notifications créée/vérifiée');
 
+        // Créer la table des classes
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS classes (
+                id SERIAL PRIMARY KEY,
+                code VARCHAR(64) UNIQUE NOT NULL,
+                label VARCHAR(255),
+                level VARCHAR(64),
+                created_by INT REFERENCES users(id) ON DELETE SET NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_classes_code ON classes(code);
+        `);
+        console.log('✓ Table classes créée/vérifiée');
+
         // Créer la table pour les annonces de cours
         await pool.query(`
             CREATE TABLE IF NOT EXISTS announcements (
@@ -320,6 +335,7 @@ async function testDatabaseConnection() {
 const notificationRoutes = require('./routes/notifications');
 const postInteractionRoutes = require('./routes/postInteractions');
 const searchRoutes = require('./routes/search');
+const classRoutes = require('./routes/classes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -331,6 +347,7 @@ app.use('/api/ami', friendsRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/constellation', constellationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/classes', classRoutes);
 
 // Redirection de la racine vers login
 app.get('/', (req, res) => {
