@@ -203,67 +203,9 @@
 			}
 			.hero { display: none; }
 		}
-
-		/* === MODE CLAIR === */
-		body.theme-light {
-			--bg: #ffffff;
-			--card: #f9fafb;
-			--muted: #6b7280;
-			--accent: #4f46e5;
-			--danger: #ef4444;
-		}
-
-		body.theme-light {
-			background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-			color: #1f2937;
-		}
-
-		body.theme-light .shell {
-			background: transparent;
-		}
-
-		body.theme-light .card {
-			background: #ffffff;
-			border: 1px solid #e5e7eb;
-		}
-
-		body.theme-light input {
-			background: #f9fafb;
-			border: 1px solid #e5e7eb;
-			color: #1f2937;
-		}
-
-		body.theme-light input::placeholder {
-			color: #9ca3af;
-		}
-
-		body.theme-light .button {
-			background: #4f46e5;
-			color: #ffffff;
-		}
-
-		body.theme-light .button:hover {
-			background: #4338ca;
-		}
-
-		body.theme-light .text {
-			color: #1f2937;
-		}
-
-		body.theme-light .muted {
-			color: #6b7280;
-		}
 	</style>
 </head>
 <body>
-	<script>
-		// Charger le thème au démarrage
-		const THEME_STORAGE_KEY = 'selectedTheme';
-		const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
-		if (saved === 'light') {
-			document.body.classList.add('theme-light');
-		}
-	</script>
 	<div class="shell">
 		<section class="hero">
 			<div class="badge">Unity · Espace Étudiants</div>
@@ -347,7 +289,9 @@
 				</div>
 				<div class="field" id="fieldClasse">
 					<label for="regClasse">Classe (si étudiant)</label>
-					<input type="text" id="regClasse" placeholder="Ex: L3 INFO A" />
+					<select id="regClasse" style="width:100%;padding:8px 10px;border-radius:9px;border:1px solid rgba(148,163,184,0.5);background:rgba(15,23,42,0.95);color:#e5e7eb;font-size:13px;">
+						<option value="">Sélectionne ta classe…</option>
+					</select>
 				</div>
 				<div class="field">
 					<label for="regEmail">Email</label>
@@ -386,12 +330,31 @@
 		document.addEventListener('DOMContentLoaded', () => {
 			const roleSelect = document.getElementById('regRole');
 			const classeField = document.getElementById('fieldClasse');
+			const classeSelect = document.getElementById('regClasse');
 			if (!roleSelect || !classeField) return;
 			const updateClasseVisibility = () => {
 				classeField.style.display = roleSelect.value === 'eleve' ? 'block' : 'none';
 			};
 			roleSelect.addEventListener('change', updateClasseVisibility);
 			updateClasseVisibility();
+
+			// Charger la liste des classes depuis l'API
+			if (classeSelect) {
+				fetch(window.location.origin + '/api/classes')
+					.then(res => res.ok ? res.json() : Promise.reject())
+					.then(data => {
+						const classes = data.classes || [];
+						classes.forEach(c => {
+							const opt = document.createElement('option');
+							opt.value = c.code;
+							opt.textContent = c.label ? `${c.code} – ${c.label}` : c.code;
+							classeSelect.appendChild(opt);
+						});
+					})
+					.catch(() => {
+						// En cas d'erreur, on laisse le select vide avec l'option par défaut
+					});
+			}
 		});
 	</script>
 </body>

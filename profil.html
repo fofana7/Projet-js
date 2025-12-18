@@ -655,95 +655,9 @@
             }
         }
 
-        /* === MODE CLAIR POUR LE PROFIL === */
-        body.theme-light {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --accent-color: #f59e0b;
-            --background-color: #ffffff;
-            --card-background: #f9fafb;
-            --card-hover: #f3f4f6;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --text-muted: #9ca3af;
-            --border-color: #e5e7eb;
-            --success-color: #10b981;
-            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-            color: #1f2937;
-        }
-
-        body.theme-light .container {
-            background: transparent;
-        }
-
-        body.theme-light .profile-header-area {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        body.theme-light .card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            color: #1f2937;
-        }
-
-        body.theme-light .profile-info-text h2,
-        body.theme-light .profile-pseudo {
-            color: #1f2937;
-        }
-
-        body.theme-light .profile-bio,
-        body.theme-light .profile-handle {
-            color: #6b7280;
-        }
-
-        body.theme-light .stat-value {
-            color: #667eea;
-        }
-
-        body.theme-light .btn {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            color: #1f2937;
-        }
-
-        body.theme-light .btn:hover {
-            background: #e5e7eb;
-        }
-
-        body.theme-light input,
-        body.theme-light textarea {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            color: #1f2937;
-        }
-
-        body.theme-light input::placeholder,
-        body.theme-light textarea::placeholder {
-            color: #9ca3af;
-        }
-
-        body.theme-light .post-card {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-        }
-
-        body.theme-light .empty-state {
-            color: #9ca3af;
-        }
     </style>
 </head>
 <body>
-    <script>
-        // Charger le thème au démarrage avant toute rendu
-        const THEME_STORAGE_KEY = 'selectedTheme';
-        const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
-        
-        if (saved === 'light') {
-            document.body.classList.add('theme-light');
-        }
-    </script>
-
 <div id="profileApp" class="container">
     
     <header class="profile-header-area">
@@ -774,6 +688,9 @@
         </div>
 
         <div class="action-buttons" id="actionButtons">
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                ⬅️ Retour au fil
+            </button>
             <button class="btn btn-primary" onclick="editProfileScroll()">
                 ✏️ Modifier le profil
             </button>

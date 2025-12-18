@@ -629,6 +629,33 @@
       border-color: var(--accent);
       color: #e6f4ff;
     }
+
+    /* Notifications toast en haut à droite */
+    .toast {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      font-size: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      max-width: 260px;
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg,#16a34a,#22c55e);
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg,#ef4444,#b91c1c);
+    }
+
+    .toast.info {
+      background: linear-gradient(135deg,#0b84ff,#2563eb);
+    }
   </style>
 </head>
 <body>
@@ -639,6 +666,7 @@
       document.body.classList.add('theme-light');
     }
   </script>
+  <div id="toast" class="toast" style="display:none;"></div>
   <div class="container">
     <!-- TOPBAR -->
     <div class="topbar">
@@ -651,7 +679,7 @@
       </div>
     </div>
 
-    <!-- TABS -->
+    <!-- TABS (annonces déplacées vers le dashboard enseignant) -->
     <div class="tabs-bar">
       <button class="tab-btn active" onclick="switchTab('all')">💬 Tous</button>
       <button class="tab-btn" onclick="switchTab('private')">💭 Privés</button>
@@ -659,16 +687,14 @@
       <button class="tab-btn" onclick="switchTab('forum')">❓ Forum</button>
       <button class="tab-btn" onclick="switchTab('docs')">📄 Docs</button>
       <button class="tab-btn" onclick="switchTab('events')">📅 Événements</button>
-      <button class="tab-btn" onclick="switchTab('board')">📢 Annonces</button>
       <button class="tab-btn" onclick="switchTab('polls')">📊 Sondages</button>
     </div>
 
-    <!-- QUICK ACTIONS -->
+    <!-- QUICK ACTIONS (sans annonce rapide, gérée côté dashboard enseignant) -->
     <div style="display:flex; gap:8px; padding:8px 18px 0 18px; flex-wrap:wrap;">
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal')">💬 Nouveau privé</button>
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('newConvModal'); document.getElementById('convType').value='group'; updateConvForm();">👥 Nouveau groupe</button>
       <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="shareDoc()">📎 Partager un document</button>
-      <button class="btn" style="font-size:11px; padding:4px 10px;" onclick="openModal('announcementModal')">📢 Annonce rapide</button>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -913,6 +939,21 @@
     let groupFriendsSearchQuery = '';
 
     // ========================================
+    // NOTIFICATIONS (TOAST)
+    // ========================================
+    function showToast(message, type = 'info') {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = message;
+      el.className = 'toast ' + type;
+      el.style.display = 'block';
+      if (showToast._timer) clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        el.style.display = 'none';
+      }, 4000);
+    }
+
+    // ========================================
     // STATE MANAGEMENT
     // ========================================
     function loadState() {
@@ -1028,14 +1069,10 @@
         || b.textContent.includes('Forum') && tab === 'forum'
         || b.textContent.includes('Docs') && tab === 'docs'
         || b.textContent.includes('Événements') && tab === 'events'
-        || b.textContent.includes('Annonces') && tab === 'board'
         || b.textContent.includes('Sondages') && tab === 'polls');
       if (btn) btn.classList.add('active');
       if (tab === 'events') {
         openModal('eventModal');
-      }
-      if (tab === 'board') {
-        loadAndDisplayAnnouncements();
       }
       renderSidebar();
     }
@@ -1364,15 +1401,15 @@
 
         if (!res.ok) {
           const err = await res.json();
-          alert('❌ ' + (err.error || 'Erreur lors de la suppression'));
+          showToast('❌ ' + (err.error || 'Erreur lors de la suppression'), 'error');
           return;
         }
 
-        alert('✓ Annonce supprimée');
+        showToast('✓ Annonce supprimée', 'success');
         loadAndDisplayAnnouncements();
       } catch (e) {
         console.error('Erreur suppression annonce:', e);
-        alert('❌ Erreur réseau');
+        showToast('❌ Erreur réseau', 'error');
       }
     }
 
@@ -1756,7 +1793,7 @@
           const recipient = contacts.find(c => c.username === recipientName);
 
           if (!recipient) {
-            alert('Destinataire non trouvé dans les contacts');
+            showToast('Destinataire non trouvé dans les contacts', 'error');
             return;
           }
 
@@ -1776,12 +1813,12 @@
 
           if (!sendRes.ok) {
             console.error('Erreur envoi message:', sendRes.status);
-            alert('Erreur lors de l\'envoi du message');
+            showToast('Erreur lors de l\'envoi du message', 'error');
             return;
           }
         } catch (error) {
           console.error('Erreur envoi message:', error);
-          alert('Erreur réseau lors de l\'envoi du message');
+          showToast('Erreur réseau lors de l\'envoi du message', 'error');
           return;
         }
       }
@@ -1817,7 +1854,7 @@
 
     function shareDoc() {
       if (!currentConvId) {
-        alert('⚠️ Sélectionne une conversation d\'abord');
+        showToast('⚠️ Sélectionne une conversation d\'abord', 'info');
         return;
       }
       // Ouvre directement la modal; l'utilisateur peut soit coller un lien, soit choisir un fichier local
@@ -1986,8 +2023,8 @@
     }
 
     function toggleInfo() {
-      alert('ℹ️ Infos conversation\n\nID: ' + currentConvId + '\nMessages: ' + 
-        (state.conversations.find(c => c.id === currentConvId)?.messages.length || 0));
+      const count = (state.conversations.find(c => c.id === currentConvId)?.messages.length || 0);
+      showToast('ℹ️ Infos conversation — ID: ' + currentConvId + ' — Messages: ' + count, 'info');
     }
 
     function setEventRsvp(convId, status) {
@@ -2005,7 +2042,7 @@
     function openGroupMembers() {
       const conv = state.conversations.find(c => c.id === currentConvId);
       if (!conv || conv.type !== 'group') {
-        alert('Cette gestion est disponible uniquement pour les conversations de type groupe.');
+        showToast('Cette gestion est disponible uniquement pour les conversations de type groupe.', 'info');
         return;
       }
       renderGroupMembers(conv);
@@ -2085,7 +2122,7 @@
     async function leaveCurrentGroup() {
       const conv = state.conversations.find(c => c.id === currentConvId);
       if (!conv || conv.type !== 'group') {
-        alert('❌ Impossible de quitter: pas de groupe sélectionné');
+        showToast('❌ Impossible de quitter: pas de groupe sélectionné', 'error');
         return;
       }
 
@@ -2104,11 +2141,11 @@
 
         if (!res.ok) {
           const error = await res.json();
-          alert('❌ Erreur: ' + (error.message || 'Impossible de quitter le groupe'));
+          showToast('❌ Erreur: ' + (error.message || 'Impossible de quitter le groupe'), 'error');
           return;
         }
 
-        alert('✓ Vous avez quitté le groupe');
+        showToast('✓ Vous avez quitté le groupe', 'success');
         closeModal('groupMembersModal');
         
         // Supprimer la conversation de la liste
@@ -2121,7 +2158,7 @@
         renderChat(null);
       } catch (e) {
         console.error('Erreur:', e);
-        alert('❌ Erreur réseau');
+        showToast('❌ Erreur réseau', 'error');
       }
     }
 
