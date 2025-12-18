@@ -1,4 +1,4 @@
-# 🚀 MiniRéseau Étudiants - Messagerie & Réseau Social
+# 🚀 Unity Étudiants - Messagerie & Réseau Social
 
 ## ⚡ Démarrage rapide
 

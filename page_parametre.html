@@ -893,10 +893,40 @@
   // ========== SUPPRIMER LE COMPTE ==========
   const logoutBtn = document.getElementById('logout-btn');
   if(logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      if(confirm('Êtes-vous absolument sûr ? Cette action est irréversible.')) {
-        alert("Votre compte a bien été supprimé. A bientôt !");
+    logoutBtn.addEventListener('click', async () => {
+      if(!confirm('Êtes-vous absolument sûr ? Cette action est irréversible.')) {
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vous devez être connecté pour supprimer votre compte.');
         window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:3000/api/users/me', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!res.ok) {
+          alert("Erreur lors de la suppression de votre compte.");
+          return;
+        }
+
+        // Nettoyer la session locale
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        alert('Votre compte a bien été supprimé. À bientôt !');
+        window.location.href = 'login.html';
+      } catch (e) {
+        console.error('Erreur suppression compte:', e);
+        alert("Erreur réseau lors de la suppression de votre compte.");
       }
     });
   }
@@ -904,23 +934,66 @@
   // ========== TÉLÉCHARGER LES DONNÉES ==========
   const downloadBtn = document.getElementById('download-data-btn');
   if(downloadBtn) {
-    downloadBtn.addEventListener('click', () => {
-      const userData = {
-        nom: "John Doe",
-        email: "john.doe@example.com",
-        dateNaissance: "1990-01-01",
-        localisation: "Paris, France",
-        bio: "Ma bio...",
-        dateExport: new Date().toISOString()
-      };
+    downloadBtn.addEventListener('click', async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Veuillez vous reconnecter pour télécharger vos données.");
+        window.location.href = 'login.html';
+        return;
+      }
 
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "mes_donnees_unity.json");
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+      try {
+        // 1) Récupérer le profil à jour
+        const meRes = await fetch('http://localhost:3000/api/users/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!meRes.ok) {
+          alert("Impossible de récupérer votre profil pour l'export.");
+          return;
+        }
+
+        const meData = await meRes.json();
+        const user = meData.user || meData;
+
+        // 2) Récupérer les amis et les posts en parallèle
+        const [friendsRes, postsRes] = await Promise.all([
+          fetch('http://localhost:3000/api/ami/friends', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch(`http://localhost:3000/api/posts/user/${user.id}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          })
+        ]);
+
+        if (!friendsRes.ok || !postsRes.ok) {
+          alert("Erreur lors de la récupération de vos amis ou de vos posts.");
+          return;
+        }
+
+        const friends = await friendsRes.json();
+        const posts = await postsRes.json();
+
+        const data = {
+          generatedAt: new Date().toISOString(),
+          user,
+          friends,
+          posts
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = url;
+        downloadAnchor.download = 'mes_donnees_unity.json';
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Erreur export données:', e);
+        alert("Erreur réseau lors du téléchargement de vos données.");
+      }
     });
   }
 

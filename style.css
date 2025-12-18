@@ -309,19 +309,20 @@ nav.menu button {
 .right-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
 .suggest {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .follow-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 6px 0;
 }
 
 /* === Helpers === */

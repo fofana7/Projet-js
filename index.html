@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MiniRéseau — Fil</title>
+    <title>Unity — Fil</title>
     <!-- Chargement de Tailwind CSS pour les utilitaires de base (hidden, flex, etc.) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Votre feuille de style personnalisée -->
@@ -90,10 +90,10 @@
         <!-- HEADER -->
         <header>
             <div class="logo">
-                <div class="dot">MR</div>
+                <div class="dot">UN</div>
                 <div class="name">
-                    <strong>MiniRéseau</strong>
-                    <div class="small">Un prototype social</div>
+                    <strong>Unity</strong>
+                    <div class="small">Mini réseau social</div>
                 </div>
             </div>
             <div class="search" style="position:relative;flex:1;max-width:500px;">
@@ -168,9 +168,9 @@
                     <div class="muted">en local</div>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:10px">
-					<div class="pill" style="cursor:pointer" onclick="showAllPosts()">Tous</div>
-					<div class="pill" style="cursor:pointer" onclick="showMyPosts()">Posts <div id="statPosts" style="font-weight:700">0</div></div>
-					<div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
+                    <div class="pill" style="cursor:pointer" onclick="showAllPosts()">Tous <div id="statAllPosts" style="font-weight:700">0</div></div>
+                    <div class="pill" style="cursor:pointer" onclick="showMyPosts()">Posts <div id="statPosts" style="font-weight:700">0</div></div>
+                    <div class="pill">Amis <div id="statFriends" style="font-weight:700">0</div></div>
                 </div>
             </div>
         </aside>
@@ -248,7 +248,7 @@
 
         <!-- RIGHT COLUMN -->
         <aside class="right-section">
-            <div class="card">
+            <div class="card" style="margin-bottom:40px;">
                 <strong>Suggestions</strong>
                 <div class="suggest" id="suggestions"></div>
             </div>
@@ -691,9 +691,38 @@ window.goToProfile = function(userId) {
         function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(localState)); updateStats(); }
         function load(){ const s = localStorage.getItem(STORAGE_KEY); if(s){ try{localState=JSON.parse(s);}catch(e){console.warn(e)} } updateStats(); }
         function updateStats(){ 
-            document.getElementById('statPosts').textContent = localState.posts.length; 
-            document.getElementById('statFriends').textContent = realFriendsCount; 
-            document.getElementById('notifCount').textContent = localState.notifications.length; 
+            const posts = Array.isArray(localState.posts) ? localState.posts : [];
+
+            // Compter tous les posts (timeline complète)
+            const allPostsCount = posts.length;
+
+            // Compter uniquement les posts de l'utilisateur connecté
+            let myPostsCount = 0;
+            if (currentUser && posts.length > 0) {
+                const username = (currentUser.username || '').toLowerCase();
+                const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim().toLowerCase();
+
+                myPostsCount = posts.filter(p => {
+                    const sameId = p.userId != null && currentUser.id != null && String(p.userId) === String(currentUser.id);
+
+                    const handle = (p.authorHandle || '').toLowerCase();
+                    const name = (p.authorName || '').toLowerCase();
+                    const sameHandle = username && handle === `@${username}`;
+                    const sameName = fullName && name.includes(fullName);
+
+                    return sameId || sameHandle || sameName;
+                }).length;
+            }
+
+			const allPostsEl = document.getElementById('statAllPosts');
+			const postsEl = document.getElementById('statPosts');
+			const friendsEl = document.getElementById('statFriends');
+			const notifEl = document.getElementById('notifCount');
+
+			if (allPostsEl) allPostsEl.textContent = allPostsCount;
+			if (postsEl) postsEl.textContent = myPostsCount;
+			if (friendsEl) friendsEl.textContent = realFriendsCount; 
+			if (notifEl) notifEl.textContent = localState.notifications.length; 
         }
 
         // Charge le nombre d'amis réels via l'API /ami/friends pour synchroniser avec ami.html
@@ -1182,7 +1211,7 @@ window.goToProfile = function(userId) {
                 showMessage('Erreur réseau', 'danger');
             }
         }
-        function seedSample(){ const samples=[{text:'Bienvenue sur MiniRéseau ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},{text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},{text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}]; samples.forEach(s=>{ localState.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
+        function seedSample(){ const samples=[{text:'Bienvenue sur Unity ! #hello #prototype',authorName:'Alice',authorHandle:'@alice'},{text:'Un exemple de post avec un lien https://example.com',authorName:'Bob',authorHandle:'@bob'},{text:'On teste les réactions et commentaires. Qui veut discuter JS ? #javascript',authorName:'Carole',authorHandle:'@carole'}]; samples.forEach(s=>{ localState.posts.push(Object.assign({id:uid(),ts:Date.now()-Math.floor(Math.random()*1000*60*60),likes:Math.floor(Math.random()*8),comments:[],authorInitials:getInitials(s.authorName)},s)); }); save(); renderFeed(); }
         function clearAll(){ if(!confirm('Tout réinitialiser (stockage local des posts/amis) ?')) return; localStorage.removeItem(STORAGE_KEY); localState={posts:[],friends:[],notifications:[]}; save(); renderFeed(); }
 
         document.getElementById('searchInput').addEventListener('input', async (e) => {
@@ -1359,6 +1388,7 @@ window.goToProfile = function(userId) {
                 }));
 
                 renderFeed();
+                updateStats();
             } catch (error) {
                 console.error('Erreur chargement fil:', error);
             }

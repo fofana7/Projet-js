@@ -364,6 +364,12 @@
                 let res = await fetch(API + '/ami', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                console.log('LOAD /ami status:', res.status);
+                if (res.status === 401 || res.status === 403) {
+                    console.warn('LOAD: session expirée ou non autorisée, redirection vers login');
+                    window.location.href = 'login.html';
+                    return;
+                }
                 allUsers = res.ok ? await res.json() : [];
                 console.log('LOAD: ' + allUsers.length + ' utilisateurs trouvés');
                 
@@ -371,6 +377,12 @@
                 res = await fetch(API + '/ami/friends', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                console.log('LOAD /ami/friends status:', res.status);
+                if (res.status === 401 || res.status === 403) {
+                    console.warn('LOAD: session expirée ou non autorisée (friends), redirection vers login');
+                    window.location.href = 'login.html';
+                    return;
+                }
                 myFriends = res.ok ? await res.json() : [];
                 console.log('LOAD: ' + myFriends.length + ' amis (API)');
                 
@@ -378,6 +390,12 @@
                 res = await fetch(API + '/ami/requests', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                console.log('LOAD /ami/requests status:', res.status);
+                if (res.status === 401 || res.status === 403) {
+                    console.warn('LOAD: session expirée ou non autorisée (requests), redirection vers login');
+                    window.location.href = 'login.html';
+                    return;
+                }
                 friendRequests = res.ok ? await res.json() : [];
                 console.log('LOAD: ' + friendRequests.length + ' demandes');
                 
