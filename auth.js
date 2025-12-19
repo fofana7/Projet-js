@@ -93,6 +93,12 @@ async function register() {
         return alert("Remplissez tous les champs");
     }
 
+    // Validation locale du mot de passe pour aider l'utilisateur
+    const strongRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
+    if (!strongRegex.test(password)) {
+        return alert("Mot de passe trop faible. Il doit contenir au moins 12 caractères, une majuscule, un chiffre et un caractère spécial.");
+    }
+
     try {
         const res = await fetch(`${API_URL}/register`, { 
             method: "POST",

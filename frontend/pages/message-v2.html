@@ -1432,9 +1432,11 @@
       currentConvId = convId;
       conv.unread = 0;
 
-      // Charger les messages depuis la base de données si conversation privée
+      // Charger les messages depuis la base de données selon le type de conversation
       if (conv.type === 'private') {
         await loadMessagesFromDB(conv);
+      } else if (conv.type === 'group') {
+        await loadGroupMessagesFromDB(conv);
       }
 
       renderSidebar();
@@ -1515,6 +1517,35 @@
         saveState();
       } catch (error) {
         console.error('Erreur chargement messages DB:', error);
+      }
+    }
+
+    async function loadGroupMessagesFromDB(conv) {
+      const token = localStorage.getItem('token');
+      if (!token || !conv.groupId) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/api/messages/group/${conv.groupId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) return;
+
+        const messages = await res.json();
+
+        conv.messages = messages.map(msg => ({
+          id: msg.id,
+          author: msg.username || (msg.sender_id === state.me.id ? state.me.username : 'Membre'),
+          authorId: msg.sender_id,
+          text: msg.text,
+          ts: new Date(msg.created_at).getTime(),
+          reactions: {},
+          read: true
+        }));
+
+        saveState();
+      } catch (error) {
+        console.error('Erreur chargement messages groupe DB:', error);
       }
     }
 
@@ -1770,7 +1801,7 @@
       const conv = state.conversations.find(c => c.id === currentConvId);
       if (!conv) return;
 
-      // Pour les conversations privées, envoyer via l'API
+      // Pour les conversations privées, envoyer via l'API messages/send
       if (conv.type === 'private') {
         const recipientName = conv.members.find(m => m !== state.me.username);
         if (!recipientName) return;
@@ -1819,6 +1850,38 @@
         } catch (error) {
           console.error('Erreur envoi message:', error);
           showToast('Erreur réseau lors de l\'envoi du message', 'error');
+          return;
+        }
+      }
+
+      // Pour les groupes, envoyer via l'API messages/group/send
+      else if (conv.type === 'group') {
+        const token = localStorage.getItem('token');
+        if (!token || !conv.groupId) return;
+
+        try {
+          const sendRes = await fetch('http://localhost:3000/api/messages/group/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              groupId: conv.groupId,
+              text: text,
+              fileUrl: null
+            })
+          });
+
+          if (!sendRes.ok) {
+            const err = await sendRes.json().catch(() => ({}));
+            console.error('Erreur envoi message groupe:', sendRes.status, err);
+            showToast(err.error || 'Erreur lors de l\'envoi du message au groupe', 'error');
+            return;
+          }
+        } catch (error) {
+          console.error('Erreur envoi message groupe:', error);
+          showToast('Erreur réseau lors de l\'envoi du message au groupe', 'error');
           return;
         }
       }
@@ -2136,7 +2199,8 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ groupId: conv.id })
+          // Utiliser l'id de groupe réel côté backend, pas l'id local de conversation
+          body: JSON.stringify({ groupId: conv.groupId })
         });
 
         if (!res.ok) {

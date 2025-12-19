@@ -206,7 +206,7 @@ exports.deleteMe = async (req, res) => {
         await pool.query('DELETE FROM group_members WHERE user_id = $1', [userId]);
 
         // Supprimer les messages privés envoyés ou reçus
-        await pool.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
+        await pool.query('DELETE FROM messages WHERE sender_id = $1 OR recipient_id = $1', [userId]);
 
         // Supprimer enfin l'utilisateur lui-même (les posts, likes, commentaires, groupes
         // reliés par ON DELETE CASCADE seront nettoyés automatiquement)

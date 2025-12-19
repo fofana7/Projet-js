@@ -10,6 +10,20 @@ const isStudentEmail = (email) => {
     return ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
 };
 
+// Vérifie la robustesse du mot de passe :
+// - au moins 12 caractères
+// - au moins 1 majuscule
+// - au moins 1 chiffre
+// - au moins 1 caractère spécial
+function isStrongPassword(pwd) {
+    if (typeof pwd !== 'string') return false;
+    if (pwd.length < 12) return false;
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasDigit = /[0-9]/.test(pwd);
+    const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+    return hasUpper && hasDigit && hasSpecial;
+}
+
 // =====================
 // REGISTER
 // =====================
@@ -41,6 +55,14 @@ exports.register = async (req, res) => {
 
     if (!isStudentEmail(email)) {
         return res.status(403).json({ error: 'L\'inscription est réservée aux étudiants L\'esme.' });
+    }
+
+    // Vérifier la robustesse du mot de passe
+    if (!isStrongPassword(password)) {
+        return res.status(400).json({
+            error: 'Mot de passe trop faible. Il doit contenir au moins 12 caractères, ' +
+                   'une majuscule, un chiffre et un caractère spécial.'
+        });
     }
 
     try {
@@ -118,8 +140,11 @@ exports.changePassword = async (req, res) => {
         return res.status(400).json({ error: 'Mot de passe actuel et nouveau mot de passe requis' });
     }
 
-    if (newPassword.length < 6) {
-        return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
+    if (!isStrongPassword(newPassword)) {
+        return res.status(400).json({
+            error: 'Le nouveau mot de passe doit contenir au moins 12 caractères, ' +
+                   'une majuscule, un chiffre et un caractère spécial.'
+        });
     }
 
     try {
